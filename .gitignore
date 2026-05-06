@@ -39,3 +39,14 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local database
+expenses.db
+expenses.db-journal
+
+# local uploads/receipts
+/public/receipts/*
+!/public/receipts/.gitkeep
+/public/data/proofs/*
+!/public/data/proofs/.gitkeep
+emertech-utilities.json
