@@ -10,11 +10,11 @@
     "reset-db": "node scratch/wipe-db.js"
   },
   "dependencies": {
-    "better-sqlite3": "^12.9.0",
-    "fs-extra": "^11.3.4",
-    "googleapis": "^171.4.0",
+    "@libsql/client": "^0.17.3",
+    "@vercel/blob": "^2.4.0",
+    "dotenv": "^17.4.2",
     "next": "16.2.4",
-    "node-cron": "^4.2.1",
+    "nodemailer": "^8.0.8",
     "pdf-lib": "^1.17.1",
     "pdfjs-dist": "^5.7.284",
     "react": "19.2.4",
@@ -25,6 +25,7 @@
     "@types/fs-extra": "^11.0.4",
     "@types/node": "^20",
     "@types/node-cron": "^3.0.11",
+    "@types/nodemailer": "^8.0.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",

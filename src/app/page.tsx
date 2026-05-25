@@ -14,8 +14,7 @@ export default function HRDashboard() {
   const [statusFilter, setStatusFilter] = useState<'Pending' | 'Approved'>('Pending');
   const [loading, setLoading] = useState(true);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [syncStatus, setSyncStatus] = useState<{ imported: number, errors: string[] } | null>(null);
+
 
   useEffect(() => {
     const fetchExpenses = async () => {
@@ -62,28 +61,7 @@ export default function HRDashboard() {
     return items.reduce((sum, item) => sum + item.amount, 0);
   };
 
-  const handleSync = async () => {
-    setIsSyncing(true);
-    setSyncStatus(null);
-    try {
-      const response = await fetch('/api/sync', { method: 'POST' });
-      const data = await response.json();
-      if (response.ok) {
-        setSyncStatus({ imported: data.importedCount, errors: data.errors });
-        // Refresh the list
-        const updated = await getExpenses();
-        setExpenses(updated);
-        alert(`Sync complete! Imported ${data.importedCount} records.`);
-      } else {
-        alert(`Sync failed: ${data.details || 'Unknown error'}`);
-      }
-    } catch (error) {
-      console.error("Sync error:", error);
-      alert("Failed to trigger sync.");
-    } finally {
-      setIsSyncing(false);
-    }
-  };
+
 
   return (
     <>
@@ -93,35 +71,7 @@ export default function HRDashboard() {
           <p>Review pending expense reports and generate printable reimbursement slips.</p>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
-          <button 
-            className="btn btn-primary" 
-            onClick={handleSync} 
-            disabled={isSyncing}
-            style={{ 
-              backgroundColor: isSyncing ? '#94a3b8' : 'var(--primary)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
-            }}
-          >
-            {isSyncing ? (
-              <>
-                <svg className="animate-spin" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-                Syncing...
-              </>
-            ) : (
-              <>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12a9 9 0 0 1-9 9m9-9a9 9 0 0 0-9-9m9 9H3m9 9a9 9 0 0 1-9-9m9-9a9 9 0 0 0-9 9"/></svg>
-                Sync Reimbursements
-              </>
-            )}
-          </button>
-          {syncStatus && syncStatus.imported > 0 && (
-            <span style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: 500 }}>
-              Last sync: +{syncStatus.imported} records
-            </span>
-          )}
+          {/* Action buttons could go here */}
         </div>
       </div>
 
