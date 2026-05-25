@@ -237,6 +237,11 @@ tr:hover td {
   color: #065f46;
 }
 
+.badge-discarded {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
 /* Emertech Payment Voucher Styles */
 .print-container {
   display: none;
@@ -264,13 +269,14 @@ tr:hover td {
     width: 100%;
     background-color: white;
     padding: 0;
+    filter: grayscale(100%) !important;
   }
 
   .print-slip {
     display: block;
     width: 100%;
     padding: 2.5rem;
-    margin-bottom: 2rem;
+    margin-bottom: 0;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     background-color: white;
     color: #1a1a1a;

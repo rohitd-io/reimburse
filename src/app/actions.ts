@@ -16,10 +16,16 @@ export async function getExpenses() {
     return { ...exp, items: itemsResult.rows };
   }));
   
-  return results;
+  return JSON.parse(JSON.stringify(results));
 }
 
 export async function submitExpense(formData: FormData) {
+  const honeypot = formData.get('honeypot') as string;
+  if (honeypot) {
+    // Honeypot field was filled out, likely a bot. Silently ignore.
+    return { success: true, id: null };
+  }
+
   const name = formData.get('name') as string;
   const department = formData.get('department') as string;
   const itemJSON = formData.get('items') as string;

@@ -9,6 +9,7 @@ export default function SubmitExpense() {
   const [submitting, setSubmitting] = useState(false);
   const [name, setName] = useState("");
   const [department, setDepartment] = useState("");
+  const [honeypot, setHoneypot] = useState("");
   const [items, setItems] = useState([
     { category: "", amount: "", description: "", proof: null as File | null, paymentMethod: "", referenceNo: "" }
   ]);
@@ -43,6 +44,7 @@ export default function SubmitExpense() {
       const formData = new FormData();
       formData.append('name', name);
       formData.append('department', department);
+      formData.append('honeypot', honeypot);
       
       const itemsMetadata = items.map((item, index) => {
         if (item.proof) {
@@ -102,6 +104,10 @@ export default function SubmitExpense() {
         </div>
         <div className="card-body">
           <form onSubmit={handleSubmit}>
+            <div style={{ display: 'none' }}>
+              <label>Leave this field blank</label>
+              <input type="text" name="honeypot" tabIndex={-1} autoComplete="off" value={honeypot} onChange={(e) => setHoneypot(e.target.value)} />
+            </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
               <div>
                 <label className="form-label">Employee Name <span style={{ color: 'var(--danger, #ef4444)' }}>*</span></label>

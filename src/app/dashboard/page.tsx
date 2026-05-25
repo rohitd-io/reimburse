@@ -11,36 +11,38 @@ export default function HRDashboard() {
   const [expenses, setExpenses] = useState<any[]>([]);
   const [selectedExpense, setSelectedExpense] = useState<any>(null);
   const [includeOfficeCopy, setIncludeOfficeCopy] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<'Pending' | 'Approved'>('Pending');
+  const [statusFilter, setStatusFilter] = useState<'Pending' | 'Approved' | 'Discarded'>('Pending');
   const [loading, setLoading] = useState(true);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
 
+  const fetchExpenses = async () => {
+    setLoading(true);
+    try {
+      const data = await getExpenses();
+      setExpenses(data);
+    } catch (error) {
+      console.error("Failed to fetch expenses:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchExpenses = async () => {
-      setLoading(true);
-      try {
-        const data = await getExpenses();
-        setExpenses(data);
-      } catch (error) {
-        console.error("Failed to fetch expenses:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchExpenses();
   }, []);
 
-  const handleApprove = async (id: string) => {
+  const handleStatusUpdate = async (id: string, status: string) => {
+    if (status === 'Discarded' && !window.confirm("Are you sure you want to discard this expense?")) return;
     try {
-      await updateExpenseStatus(id, 'Approved');
+      await updateExpenseStatus(id, status);
       const updated = await getExpenses();
       setExpenses(updated);
       if (selectedExpense?.id === id) {
-        setSelectedExpense({ ...selectedExpense, status: 'Approved' });
+        setSelectedExpense({ ...selectedExpense, status });
       }
     } catch (error) {
-      alert("Failed to approve expense.");
+      alert(`Failed to update expense status to ${status}.`);
     }
   };
 
@@ -71,7 +73,15 @@ export default function HRDashboard() {
           <p>Review pending expense reports and generate printable reimbursement slips.</p>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
-          {/* Action buttons could go here */}
+          <button 
+            className="btn btn-secondary" 
+            onClick={fetchExpenses}
+            disabled={loading}
+            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', opacity: loading ? 0.7 : 1 }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+            {loading ? "Refreshing..." : "Refresh"}
+          </button>
         </div>
       </div>
 
@@ -113,6 +123,23 @@ export default function HRDashboard() {
             >
               Approved
             </button>
+            <button 
+              onClick={() => setStatusFilter('Discarded')}
+              style={{
+                padding: '0.5rem 1.25rem',
+                borderRadius: '0.375rem',
+                fontSize: '0.875rem',
+                fontWeight: 600,
+                border: 'none',
+                cursor: 'pointer',
+                backgroundColor: statusFilter === 'Discarded' ? 'white' : 'transparent',
+                color: statusFilter === 'Discarded' ? '#b91c1c' : 'var(--text-muted)',
+                boxShadow: statusFilter === 'Discarded' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                transition: 'all 0.2s'
+              }}
+            >
+              Discarded
+            </button>
           </div>
         </div>
         <div className="table-wrapper">
@@ -152,7 +179,7 @@ export default function HRDashboard() {
                     <td>{exp.items.length} item(s)</td>
                     <td style={{ fontWeight: 600 }}>{symbol}{totalAmount.toFixed(2)}</td>
                     <td>
-                      <span className={`badge ${exp.status === 'Pending' ? 'badge-pending' : 'badge-approved'}`}>
+                      <span className={`badge ${exp.status === 'Pending' ? 'badge-pending' : exp.status === 'Discarded' ? 'badge-discarded' : 'badge-approved'}`}>
                         {exp.status}
                       </span>
                     </td>
@@ -265,9 +292,14 @@ export default function HRDashboard() {
               </label>
                 <div style={{ display: 'flex', gap: '1rem' }}>
                   {selectedExpense.status === 'Pending' && (
-                    <button className="btn btn-secondary" onClick={() => handleApprove(selectedExpense.id)} style={{ backgroundColor: '#fff', border: '1px solid var(--border)' }}>
-                      Mark as Approved
-                    </button>
+                    <>
+                      <button className="btn btn-secondary" onClick={() => handleStatusUpdate(selectedExpense.id, 'Discarded')} style={{ backgroundColor: '#fee2e2', color: '#b91c1c', border: '1px solid #fca5a5' }}>
+                        Discard
+                      </button>
+                      <button className="btn btn-secondary" onClick={() => handleStatusUpdate(selectedExpense.id, 'Approved')} style={{ backgroundColor: '#fff', border: '1px solid var(--border)' }}>
+                        Mark as Approved
+                      </button>
+                    </>
                   )}
                   <button className="btn btn-primary" onClick={handlePrint} style={{ backgroundColor: '#10b981' }}>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
@@ -283,7 +315,7 @@ export default function HRDashboard() {
       {selectedExpense && (
         <div className="print-container">
           {/* ORIGINAL COPY */}
-          <div className="print-slip">
+          <div className="print-slip" style={selectedExpense.items.length > 5 ? { breakInside: 'auto', pageBreakInside: 'auto' } as React.CSSProperties : {}}>
             <div className="voucher-header">
               <div className="company-info">
                 <img src="/Emertech.png" alt="Emertech Logo" style={{ width: 'auto', height: '85px', marginBottom: '0.75rem' }} />
@@ -362,7 +394,10 @@ export default function HRDashboard() {
 
           {/* DUPLICATE COPY */}
           {includeOfficeCopy && (
-            <div className="print-slip duplicate-slip">
+            <div 
+              className={`print-slip ${selectedExpense.items.length <= 3 ? 'duplicate-slip' : ''}`}
+              style={selectedExpense.items.length > 3 ? { pageBreakBefore: 'always', breakBefore: 'page', ...(selectedExpense.items.length > 5 && { breakInside: 'auto', pageBreakInside: 'auto' }) } as React.CSSProperties : {}}
+            >
               <div className="voucher-header">
                 <div className="company-info">
                   <img src="/Emertech.png" alt="Emertech Logo" style={{ width: 'auto', height: '85px', marginBottom: '0.75rem' }} />

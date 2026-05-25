@@ -17,7 +17,7 @@ const WHITE_THRESHOLD = 245;
  * Scans from the bottom of a canvas upward and returns a new canvas
  * cropped to remove trailing rows of near-white pixels.
  */
-function trimCanvasWhitespace(canvas: HTMLCanvasElement): HTMLCanvasElement {
+function trimCanvasWhitespace(canvas: HTMLCanvasElement): HTMLCanvasElement | null {
   const ctx = canvas.getContext("2d");
   if (!ctx) return canvas;
 
@@ -26,7 +26,7 @@ function trimCanvasWhitespace(canvas: HTMLCanvasElement): HTMLCanvasElement {
   const data = imageData.data; // RGBA flat array
 
   // Walk rows from bottom upward to find last non-white row
-  let lastContentRow = 0;
+  let lastContentRow = -1;
   for (let y = height - 1; y >= 0; y--) {
     let rowHasContent = false;
     for (let x = 0; x < width; x++) {
@@ -45,6 +45,8 @@ function trimCanvasWhitespace(canvas: HTMLCanvasElement): HTMLCanvasElement {
       break;
     }
   }
+
+  if (lastContentRow === -1) return null; // Page is completely blank
 
   // Add a small bottom margin (8px) after the last content row
   const croppedHeight = Math.min(lastContentRow + 8, height);
@@ -96,11 +98,13 @@ export default function PDFRenderer({ url }: { url: string }) {
           // Trim trailing whitespace from the rendered page
           const trimmed = trimCanvasWhitespace(canvas);
 
-          pageResults.push({
-            src: trimmed.toDataURL("image/jpeg", 0.85),
-            width: trimmed.width,
-            height: trimmed.height,
-          });
+          if (trimmed) {
+            pageResults.push({
+              src: trimmed.toDataURL("image/jpeg", 0.85),
+              width: trimmed.width,
+              height: trimmed.height,
+            });
+          }
         }
 
         setPages(pageResults);
