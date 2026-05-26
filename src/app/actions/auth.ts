@@ -40,7 +40,7 @@ export async function requestOtp(email: string) {
     await transporter.sendMail({
       from: process.env.SMTP_FROM || process.env.SMTP_USER,
       to: email,
-      subject: "HR Dashboard Login - Your OTP",
+      subject: "Reimburse Dashboard Login - Your OTP",
       text: `Your login OTP is: ${otp}\n\nIt is valid for 10 minutes.`,
       html: `<p>Your login OTP is: <strong style="font-size: 1.5rem;">${otp}</strong></p><p>It is valid for 10 minutes.</p>`,
     });

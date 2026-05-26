@@ -51,7 +51,7 @@ export default function Login() {
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', backgroundColor: '#f1f5f9' }}>
       <div className="card no-print" style={{ width: '100%', maxWidth: '400px', padding: '2.5rem 2rem', borderRadius: '1rem', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)' }}>
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text)' }}>HR Dashboard</h2>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text)' }}>Reimburse Dashboard</h2>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginTop: '0.5rem' }}>
             {step === "EMAIL" ? "Sign in with your authorized admin email" : "Enter the OTP sent to your email"}
           </p>

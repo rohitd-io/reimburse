@@ -1,0 +1,50 @@
+
+/home/vaibhav/Documents/emertech_workspace/reimburse-pro/public/pdf.worker.mjs
+   4202:5   error  Do not assign to the variable `module`. See: https://nextjs.org/docs/messages/no-assign-module-variable  @next/next/no-assign-module-variable
+   6562:5   error  Do not assign to the variable `module`. See: https://nextjs.org/docs/messages/no-assign-module-variable  @next/next/no-assign-module-variable
+  34669:11  error  Unexpected aliasing of 'this' to local variable                                                          @typescript-eslint/no-this-alias
+  35245:11  error  Unexpected aliasing of 'this' to local variable                                                          @typescript-eslint/no-this-alias
+  38563:9   error  Unexpected aliasing of 'this' to local variable                                                          @typescript-eslint/no-this-alias
+  42238:9   error  Unexpected aliasing of 'this' to local variable                                                          @typescript-eslint/no-this-alias
+  42378:9   error  Unexpected aliasing of 'this' to local variable                                                          @typescript-eslint/no-this-alias
+  56862:11  error  Unexpected aliasing of 'this' to local variable                                                          @typescript-eslint/no-this-alias
+  59541:11  error  Unexpected aliasing of 'this' to local variable                                                          @typescript-eslint/no-this-alias
+
+/home/vaibhav/Documents/emertech_workspace/reimburse-pro/scratch/wipe-db.js
+  1:14  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  2:12  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+/home/vaibhav/Documents/emertech_workspace/reimburse-pro/scripts/add-admin.js
+  1:26  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  2:1   error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+/home/vaibhav/Documents/emertech_workspace/reimburse-pro/src/app/PDFRenderer.tsx
+  96:70  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/vaibhav/Documents/emertech_workspace/reimburse-pro/src/app/dashboard/page.tsx
+  11:44  error  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   @typescript-eslint/no-explicit-any
+  12:58  error  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   @typescript-eslint/no-explicit-any
+  38:5   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/home/vaibhav/Documents/emertech_workspace/reimburse-pro/src/app/dashboard/page.tsx:38:5
+  36 |
+  37 |   useEffect(() => {
+> 38 |     fetchExpenses();
+     |     ^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  39 |   }, []);
+  40 |
+  41 |   const handleStatusUpdate = async (id: string, status: string) => {  react-hooks/set-state-in-effect
+  88:34  error  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   @typescript-eslint/no-explicit-any
+
+/home/vaibhav/Documents/emertech_workspace/reimburse-pro/src/app/page.tsx
+  29:66  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  31:25  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+✖ 20 problems (20 errors, 0 warnings)
+

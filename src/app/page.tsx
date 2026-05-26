@@ -26,10 +26,10 @@ export default function SubmitExpense() {
     }
   };
 
-  const handleItemChange = (index: number, field: string, value: any) => {
+  const handleItemChange = (index: number, field: string, value: string | File | null) => {
     const newItems = [...items];
-    (newItems[index] as any)[field] = value;
-    setItems(newItems);
+    newItems[index] = { ...newItems[index], [field]: value };
+    setItems(newItems as typeof items);
   };
 
   const calculateTotal = () => {

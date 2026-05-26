@@ -42,6 +42,11 @@ db.executeMultiple(`
     otp TEXT,
     otp_expires_at INTEGER
   );
+
+  CREATE TABLE IF NOT EXISTS settings (
+    key TEXT PRIMARY KEY,
+    value TEXT
+  );
 `).catch(err => console.error("DB Init Error:", err));
 
 export default db;

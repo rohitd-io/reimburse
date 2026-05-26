@@ -93,6 +93,7 @@ export default function PDFRenderer({ url }: { url: string }) {
           canvas.height = viewport.height;
           canvas.width = viewport.width;
 
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           await (page.render({ canvasContext: context, viewport } as any)).promise;
 
           // Trim trailing whitespace from the rendered page
