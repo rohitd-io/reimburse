@@ -958,10 +958,10 @@ export default function HRDashboard() {
 
           {/* PROOF DOCUMENTS (Each on its own page) */}
           {selectedExpense.items
-            .filter((item: { proof_path?: string }) => item.proof_path)
+            .filter((item) => item.proof_path)
             .map(
               (
-                item: { category: string; amount: number; proof_path: string },
+                item: ExpenseItem,
                 idx: number,
               ) => (
                 <div
@@ -979,12 +979,12 @@ export default function HRDashboard() {
                     </p>
                   </div>
                   <div className="proof-content">
-                    {item.proof_path.toLowerCase().endsWith(".pdf") ?
+                    {item.proof_path!.toLowerCase().endsWith(".pdf") ?
                       <PDFRenderer
-                        url={`/api/file?url=${encodeURIComponent(item.proof_path)}`}
+                        url={`/api/file?url=${encodeURIComponent(item.proof_path!)}`}
                       />
                     : <img
-                        src={`/api/file?url=${encodeURIComponent(item.proof_path)}`}
+                        src={`/api/file?url=${encodeURIComponent(item.proof_path!)}`}
                         alt={`Proof ${idx + 1}`}
                         style={{
                           maxWidth: "100%",
