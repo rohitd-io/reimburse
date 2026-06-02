@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { get } from "@vercel/blob";
 
 export async function GET(request: NextRequest) {
   const url = request.nextUrl.searchParams.get("url");
@@ -13,25 +14,26 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // For private Vercel Blob files, append the token as a query parameter
-    const blobUrl = new URL(url);
-    blobUrl.searchParams.set('token', process.env.BLOB_READ_WRITE_TOKEN || '');
-    
-    const response = await fetch(blobUrl.toString());
+    const response = await get(url, { access: "private" });
 
-    if (!response.ok) {
-      return new NextResponse("Failed to fetch file from Blob storage", { status: response.status });
+    if (!response) {
+      return new NextResponse("Failed to fetch file from Blob storage", {
+        status: 404,
+      });
     }
 
-    // Proxy the response headers (like Content-Type) and body back to the client
-    const contentType = response.headers.get("content-type") || "application/octet-stream";
-    return new NextResponse(response.body, {
+    if (response.statusCode === 304) {
+      return new NextResponse(null, { status: 304 });
+    }
+
+    return new NextResponse(response.stream, {
       headers: {
-        "Content-Type": contentType,
-        "Cache-Control": "private, max-age=3600"
-      }
+        "Content-Type": response.blob.contentType || "application/octet-stream",
+        "Cache-Control": "private, max-age=3600",
+      },
     });
   } catch (error) {
+    console.error("Error fetching private blob:", error);
     return new NextResponse("Internal Server Error", { status: 500 });
   }
 }
