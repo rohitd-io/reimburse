@@ -1,5 +1,18 @@
 "use client";
 import { useEffect, useState } from "react";
+
+// Polyfill Promise.withResolvers for older browser engines
+if (typeof Promise.withResolvers === "undefined") {
+  (Promise as any).withResolvers = function () {
+    let resolve: any, reject: any;
+    const promise = new Promise((res, rej) => {
+      resolve = res;
+      reject = rej;
+    });
+    return { promise, resolve, reject };
+  };
+}
+
 import * as pdfjsLib from "pdfjs-dist";
 
 // Use local worker to avoid CDN fetch issues
@@ -117,7 +130,7 @@ export default function PDFRenderer({ url }: { url: string }) {
       }
     }
 
-    if (url && url.toLowerCase().endsWith('.pdf')) {
+    if (url && (url.toLowerCase().endsWith('.pdf') || url.startsWith('blob:'))) {
       loadPDF();
     }
   }, [url]);

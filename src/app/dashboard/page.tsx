@@ -112,12 +112,7 @@ export default function HRDashboard() {
   return (
     <>
       <div
-        className="header no-print"
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-        }}
+        className="header no-print header-flex"
       >
         <div>
           <h1>Reimburse Dashboard</h1>
@@ -126,14 +121,7 @@ export default function HRDashboard() {
             slips.
           </p>
         </div>
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "flex-end",
-            gap: "0.5rem",
-          }}
-        >
+        <div className="header-controls">
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", backgroundColor: "white", padding: "0.25rem 0.75rem", borderRadius: "0.5rem", border: "1px solid var(--border)", fontSize: "0.875rem" }}>
             <span style={{ fontWeight: 600, color: "var(--text-muted)" }}>Next Receipt No:</span>
             {isEditingCounter ? (
@@ -412,21 +400,9 @@ export default function HRDashboard() {
             </button>
           </div>
           <div className="card-body">
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "2fr 1fr",
-                gap: "2rem",
-              }}
-            >
+            <div className="review-grid">
               <div>
-                <div
-                  style={{
-                    marginBottom: "1.5rem",
-                    display: "flex",
-                    gap: "2rem",
-                  }}
-                >
+                <div className="review-info-flex">
                   <div>
                     <strong>Employee:</strong> {selectedExpense.name}
                   </div>
@@ -607,17 +583,7 @@ export default function HRDashboard() {
               </div>
             </div>
 
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "flex-end",
-                gap: "1.5rem",
-                marginTop: "2rem",
-                borderTop: "1px solid var(--border)",
-                paddingTop: "1.5rem",
-                alignItems: "center",
-              }}
-            >
+            <div className="review-footer-flex">
               <label
                 style={{
                   display: "flex",
@@ -1005,6 +971,7 @@ export default function HRDashboard() {
       {/* Document Preview Modal */}
       {previewUrl && (
         <div
+          className="modal-overlay"
           style={{
             position: "fixed",
             top: 0,
@@ -1020,6 +987,7 @@ export default function HRDashboard() {
           }}
         >
           <div
+            className="modal-container"
             style={{
               backgroundColor: "white",
               borderRadius: "0.75rem",
