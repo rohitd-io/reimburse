@@ -117,7 +117,7 @@ export default function PDFRenderer({ url }: { url: string }) {
       }
     }
 
-    if (url && url.toLowerCase().endsWith('.pdf')) {
+    if (url && (url.toLowerCase().endsWith('.pdf') || url.startsWith('blob:'))) {
       loadPDF();
     }
   }, [url]);

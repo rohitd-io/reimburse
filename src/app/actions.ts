@@ -60,6 +60,7 @@ export async function submitExpense(formData: FormData) {
   });
   
   const newId = info.rows[0].id;
+  const itemsWithProof = [];
 
   for (let i = 0; i < itemsMetadata.length; i++) {
     const item = itemsMetadata[i];
@@ -78,11 +79,31 @@ export async function submitExpense(formData: FormData) {
       sql: 'INSERT INTO expense_items (expense_id, category, amount, description, proof_path, payment_method, reference_no) VALUES (?, ?, ?, ?, ?, ?, ?)',
       args: [String(newId), item.category, item.amount, item.description, proofPath, item.paymentMethod || null, item.referenceNo || null]
     });
+
+    itemsWithProof.push({
+      category: item.category,
+      amount: item.amount,
+      description: item.description,
+      proof_path: proofPath || undefined,
+      payment_method: item.paymentMethod || undefined,
+      reference_no: item.referenceNo || undefined
+    });
   }
 
   revalidatePath('/');
   revalidatePath('/dashboard');
-  return { success: true, id: newId?.toString() };
+  return {
+    success: true,
+    expense: {
+      id: newId?.toString(),
+      status: 'Pending',
+      receipt_no: receiptNo,
+      date,
+      name,
+      department,
+      items: itemsWithProof
+    }
+  };
 }
 
 export async function updateExpenseStatus(id: string | number, status: string) {

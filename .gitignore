@@ -50,3 +50,6 @@ expenses.db-journal
 /public/data/proofs/*
 !/public/data/proofs/.gitkeep
 emertech-utilities.json
+
+
+.prod-env
