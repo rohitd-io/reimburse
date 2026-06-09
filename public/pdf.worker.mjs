@@ -8,6 +8,16 @@ if (typeof Promise.withResolvers === "undefined") {
     return { promise, resolve, reject };
   };
 }
+if (typeof URL.parse === "undefined") {
+  URL.parse = function (url, base) {
+    try {
+      return new URL(url, base);
+    } catch {
+      return null;
+    }
+  };
+}
+
 /**
  * @licstart The following is the entire license notice for the
  * JavaScript code in this page

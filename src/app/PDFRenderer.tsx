@@ -1,18 +1,6 @@
 "use client";
+import "./polyfill";
 import { useEffect, useState } from "react";
-
-// Polyfill Promise.withResolvers for older browser engines
-if (typeof Promise.withResolvers === "undefined") {
-  (Promise as any).withResolvers = function () {
-    let resolve: any, reject: any;
-    const promise = new Promise((res, rej) => {
-      resolve = res;
-      reject = rej;
-    });
-    return { promise, resolve, reject };
-  };
-}
-
 import * as pdfjsLib from "pdfjs-dist";
 
 // Use local worker to avoid CDN fetch issues
@@ -74,7 +62,31 @@ function trimCanvasWhitespace(canvas: HTMLCanvasElement): HTMLCanvasElement | nu
   return trimmed;
 }
 
-export default function PDFRenderer({ url }: { url: string }) {
+interface PDFRendererProps {
+  url: string;
+  itemIndex: number;
+  fileIndex: number;
+  category: string;
+  amount: number;
+  symbol: string;
+  expenseId: string | number;
+  excludedPages: Set<string>;
+  onToggleExclude?: (key: string) => void;
+  isPrint?: boolean;
+}
+
+export default function PDFRenderer({
+  url,
+  itemIndex,
+  fileIndex,
+  category,
+  amount,
+  symbol,
+  expenseId,
+  excludedPages,
+  onToggleExclude,
+  isPrint = false,
+}: PDFRendererProps) {
   const [pages, setPages] = useState<{ src: string; width: number; height: number }[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -130,33 +142,113 @@ export default function PDFRenderer({ url }: { url: string }) {
       }
     }
 
-    if (url && (url.toLowerCase().endsWith('.pdf') || url.startsWith('blob:'))) {
+    if (url && (url.toLowerCase().endsWith('.pdf') || url.startsWith('blob:') || url.includes('blob'))) {
       loadPDF();
     }
   }, [url]);
 
-  if (loading) return <div style={{ padding: '1rem', color: '#64748b' }}>Rendering PDF pages for print...</div>;
-  if (error) return <div style={{ color: '#ef4444' }}>Error loading PDF: {error}</div>;
+  if (loading) {
+    if (isPrint) return null;
+    return <div style={{ padding: '1rem', color: '#64748b' }}>Rendering PDF pages for print...</div>;
+  }
+  if (error) {
+    if (isPrint) return null;
+    return <div style={{ color: '#ef4444', padding: '1rem' }}>Error loading PDF: {error}</div>;
+  }
 
   return (
-    <div className="pdf-render-container">
-      {pages.map((page, index) => (
-        <div key={index} className="pdf-page-wrapper">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={page.src}
-            alt={`PDF Page ${index + 1}`}
-            style={{
-              width: page.width,
-              height: page.height,
-              maxWidth: '100%',
-              display: 'block',
-              margin: '0 auto',
-              border: '1px solid #ddd',
-            }}
-          />
-        </div>
-      ))}
+    <div className={isPrint ? "pdf-print-container" : "pdf-render-container"}>
+      {pages.map((page, pageIndex) => {
+        const key = `proof_${itemIndex}_${fileIndex}_${pageIndex}`;
+        const isExcluded = excludedPages.has(key);
+
+        if (isPrint) {
+          if (isExcluded) return null;
+          return (
+            <div
+              key={pageIndex}
+              className="print-proof-item"
+            >
+              <div className="proof-header">
+                <h3>
+                  Proof for Item {itemIndex + 1}: {category} (PDF Page {pageIndex + 1} of {pages.length})
+                </h3>
+                <p>
+                  Reimbursement ID: {expenseId} | Amount: {symbol}{Number(amount).toFixed(2)}
+                </p>
+              </div>
+              <div className="proof-content">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={page.src}
+                  alt={`PDF Page ${pageIndex + 1}`}
+                  style={{
+                    width: page.width,
+                    height: page.height,
+                    maxWidth: '100%',
+                    display: 'block',
+                    margin: '0 auto',
+                    border: '1px solid #ddd',
+                  }}
+                />
+              </div>
+            </div>
+          );
+        } else {
+          // On-screen preview mode
+          if (isExcluded) {
+            return (
+              <div key={pageIndex} className="excluded-page-placeholder no-print">
+                <div className="excluded-page-text">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                  <span>Proof {itemIndex + 1} (PDF Page {pageIndex + 1}) - Excluded from Print</span>
+                </div>
+                <button
+                  type="button"
+                  className="page-restore-btn"
+                  onClick={() => onToggleExclude?.(key)}
+                >
+                  Restore Page
+                </button>
+              </div>
+            );
+          }
+
+          return (
+            <div key={pageIndex} className="preview-page-card no-print">
+              <div className="preview-page-header">
+                <span className="preview-page-title">
+                  Proof {itemIndex + 1}: {category} (PDF Page {pageIndex + 1} of {pages.length})
+                </span>
+                <button
+                  type="button"
+                  className="page-exclude-btn"
+                  onClick={() => onToggleExclude?.(key)}
+                >
+                  Exclude Page
+                </button>
+              </div>
+              <div style={{ padding: '1.5rem', backgroundColor: '#fff', display: 'flex', justifyContent: 'center' }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={page.src}
+                  alt={`PDF Page ${pageIndex + 1}`}
+                  style={{
+                    width: page.width,
+                    height: page.height,
+                    maxWidth: '100%',
+                    display: 'block',
+                    border: '1px solid #ddd',
+                  }}
+                />
+              </div>
+            </div>
+          );
+        }
+      })}
     </div>
   );
 }

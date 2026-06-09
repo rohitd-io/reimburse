@@ -1,4 +1,5 @@
 "use client";
+import "../polyfill";
 import { useState, useEffect } from "react";
 import { useCurrency } from "../CurrencyContext";
 import { getExpenses, updateExpenseStatus, getReceiptCounter, updateReceiptCounter } from "../actions";
@@ -25,6 +26,19 @@ interface Expense {
   items: ExpenseItem[];
 }
 
+function getProofPaths(proofPathVal?: string): string[] {
+  if (!proofPathVal) return [];
+  try {
+    const parsed = JSON.parse(proofPathVal);
+    if (Array.isArray(parsed)) {
+      return parsed;
+    }
+    return [proofPathVal];
+  } catch (e) {
+    return [proofPathVal];
+  }
+}
+
 export default function HRDashboard() {
   const { symbol } = useCurrency();
   const [expenses, setExpenses] = useState<Expense[]>([]);
@@ -38,6 +52,23 @@ export default function HRDashboard() {
   const [currentCounter, setCurrentCounter] = useState<number>(3000);
   const [isEditingCounter, setIsEditingCounter] = useState(false);
   const [newCounter, setNewCounter] = useState<string>("");
+  const [excludedPages, setExcludedPages] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    setExcludedPages(new Set());
+  }, [selectedExpense]);
+
+  const handleToggleExclude = (key: string) => {
+    setExcludedPages((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
+  };
 
   const fetchExpenses = async () => {
     setLoading(true);
@@ -460,57 +491,67 @@ export default function HRDashboard() {
                               {item.amount.toFixed(2)}
                             </td>
                             <td style={{ textAlign: "center" }}>
-                              {item.proof_path ?
+                              {item.proof_path ? (
                                 <div
                                   style={{
                                     display: "flex",
-                                    gap: "0.5rem",
-                                    justifyContent: "center",
+                                    flexDirection: "column",
+                                    gap: "0.25rem",
+                                    alignItems: "center",
                                   }}
                                 >
-                                  <button
-                                    className="btn btn-secondary"
-                                    onClick={() =>
-                                      setPreviewUrl(
-                                        `/api/file?url=${encodeURIComponent(item.proof_path || "")}`,
-                                      )
-                                    }
-                                  >
-                                    Preview
-                                  </button>
-                                  <a
-                                    href={`/api/file?url=${encodeURIComponent(item.proof_path || "")}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="btn btn-secondary"
-                                    style={{
-                                      padding: "0.2rem 0.5rem",
-                                      fontSize: "0.7rem",
-                                      display: "flex",
-                                      alignItems: "center",
-                                    }}
-                                    title="Open in new tab"
-                                  >
-                                    <svg
-                                      width="12"
-                                      height="12"
-                                      viewBox="0 0 24 24"
-                                      fill="none"
-                                      stroke="currentColor"
-                                      strokeWidth="2"
+                                  {getProofPaths(item.proof_path).map((path, pathIdx) => (
+                                    <div
+                                      key={pathIdx}
+                                      style={{
+                                        display: "flex",
+                                        gap: "0.25rem",
+                                        justifyContent: "center",
+                                      }}
                                     >
-                                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                                      <polyline points="15 3 21 3 21 9" />
-                                      <line x1="10" y1="14" x2="21" y2="3" />
-                                    </svg>
-                                  </a>
+                                      <button
+                                        className="btn btn-secondary"
+                                        style={{ padding: "0.2rem 0.4rem", fontSize: "0.75rem" }}
+                                        onClick={() =>
+                                          setPreviewUrl(
+                                            `/api/file?url=${encodeURIComponent(path || "")}`,
+                                          )
+                                        }
+                                      >
+                                        Preview {getProofPaths(item.proof_path).length > 1 ? pathIdx + 1 : ""}
+                                      </button>
+                                      <a
+                                        href={`/api/file?url=${encodeURIComponent(path || "")}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="btn btn-secondary"
+                                        style={{
+                                          padding: "0.2rem 0.4rem",
+                                          fontSize: "0.7rem",
+                                          display: "flex",
+                                          alignItems: "center",
+                                        }}
+                                        title="Open in new tab"
+                                      >
+                                        <svg
+                                          width="10"
+                                          height="10"
+                                          viewBox="0 0 24 24"
+                                          fill="none"
+                                          stroke="currentColor"
+                                          strokeWidth="2.5"
+                                        >
+                                          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                                          <polyline points="15 3 21 3 21 9" />
+                                          <line x1="10" y1="14" x2="21" y2="3" />
+                                        </svg>
+                                      </a>
+                                    </div>
+                                  ))}
                                 </div>
-                              : <span
-                                  style={{ fontSize: "0.7rem", color: "#999" }}
-                                >
-                                  None
-                                </span>
-                              }
+                              ) : (
+                                <span style={{ fontSize: "0.7rem", color: "#999" }}>None</span>
+                              )}
                             </td>
                           </tr>
                         ),
@@ -574,13 +615,286 @@ export default function HRDashboard() {
                   }}
                 >
                   {
-                    selectedExpense.items.filter(
-                      (i: { proof_path?: string }) => i.proof_path,
-                    ).length
+                    selectedExpense.items.reduce(
+                      (sum, item) => sum + getProofPaths(item.proof_path).length,
+                      0
+                    )
                   }{" "}
                   proof document(s) available for review.
                 </span>
               </div>
+            </div>
+
+            <div style={{ marginTop: '2.5rem', paddingTop: '2rem', borderTop: '1px solid var(--border)' }}>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--text-main)' }}>Print Preview & Page Exclusions</h3>
+              <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
+                Click <strong>Exclude Page</strong> to skip printing specific payment slips, individual receipts, or particular pages of a PDF.
+              </p>
+
+              {/* Original Copy Preview Card */}
+              {excludedPages.has("original") ? (
+                <div className="excluded-page-placeholder">
+                  <div className="excluded-page-text">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                    <span>Original Payment Voucher - Excluded from Print</span>
+                  </div>
+                  <button type="button" className="page-restore-btn" onClick={() => handleToggleExclude("original")}>
+                    Restore Page
+                  </button>
+                </div>
+              ) : (
+                <div className="preview-page-card">
+                  <div className="preview-page-header">
+                    <span className="preview-page-title">Original Payment Voucher</span>
+                    <button type="button" className="page-exclude-btn" onClick={() => handleToggleExclude("original")}>
+                      Exclude Page
+                    </button>
+                  </div>
+                  <div className="card-body" style={{ padding: '2rem', backgroundColor: '#fff', color: '#1a1a1a', fontFamily: "'Inter', sans-serif" }}>
+                    <div className="voucher-preview-scroll">
+                      <div className="voucher-preview-container">
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '2px solid #e2e8f0', paddingBottom: '1.5rem', marginBottom: '1.5rem' }}>
+                          <div>
+                            <img src="/Emertech.png" alt="Emertech Logo" style={{ height: '70px', marginBottom: '0.5rem' }} />
+                            <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0 }}>Emertech Innovations Pvt. Ltd.</h3>
+                            <p style={{ fontSize: '0.7rem', color: '#4a5568', margin: 0, maxWidth: '250px' }}>A-609, Shelton Sapphaire, sector 15, CBD Belapur, Navi Mumbai</p>
+                          </div>
+                          <div style={{ textAlign: 'right' }}>
+                            <h4 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1e3a8a', margin: '0 0 0.5rem 0', textTransform: 'uppercase' }}>Payment Voucher</h4>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'flex-end' }}>
+                              <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#1e3a8a' }}>RECEIPT No.</span>
+                              <span style={{ backgroundColor: '#edf2f7', padding: '0.3rem 0.75rem', borderRadius: '4px', fontWeight: 700, fontSize: '0.9rem' }}>{selectedExpense.receipt_no || selectedExpense.id}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+                          <div style={{ borderBottom: '1px solid #cbd5e0', paddingBottom: '0.25rem' }}>
+                            <span style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, color: '#1e3a8a', textTransform: 'uppercase' }}>Date</span>
+                            <span style={{ fontSize: '0.9rem' }}>{selectedExpense.date}</span>
+                          </div>
+                          <div style={{ borderBottom: '1px solid #cbd5e0', paddingBottom: '0.25rem' }}>
+                            <span style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, color: '#1e3a8a', textTransform: 'uppercase' }}>Amount</span>
+                            <span style={{ fontSize: '0.9rem', fontWeight: 700 }}>{symbol}{calculateTotal(selectedExpense.items).toFixed(2)}</span>
+                          </div>
+                          <div style={{ borderBottom: '1px solid #cbd5e0', paddingBottom: '0.25rem' }}>
+                            <span style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, color: '#1e3a8a', textTransform: 'uppercase' }}>From</span>
+                            <span style={{ fontSize: '0.9rem' }}>{selectedExpense.name} ({selectedExpense.department})</span>
+                          </div>
+                          <div style={{ borderBottom: '1px solid #cbd5e0', paddingBottom: '0.25rem' }}>
+                            <span style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, color: '#1e3a8a', textTransform: 'uppercase' }}>Payment For</span>
+                            <span style={{ fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'block' }}>
+                              {Array.from(new Set(selectedExpense.items.map(i => i.category))).join(", ")}
+                            </span>
+                          </div>
+                        </div>
+
+                        <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '1.5rem' }}>
+                          <thead>
+                            <tr style={{ backgroundColor: '#1e3a8a', color: '#fff' }}>
+                              <th style={{ fontSize: '0.7rem', padding: '0.5rem', textAlign: 'left', borderRadius: '4px 0 0 0' }}>Sr.</th>
+                              <th style={{ fontSize: '0.7rem', padding: '0.5rem', textAlign: 'left' }}>Method</th>
+                              <th style={{ fontSize: '0.7rem', padding: '0.5rem', textAlign: 'left' }}>Ref No.</th>
+                              <th style={{ fontSize: '0.7rem', padding: '0.5rem', textAlign: 'left' }}>Description</th>
+                              <th style={{ fontSize: '0.7rem', padding: '0.5rem', textAlign: 'right', borderRadius: '0 4px 0 0' }}>Amount</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {selectedExpense.items.map((item, idx) => (
+                              <tr key={idx} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                                <td style={{ fontSize: '0.75rem', padding: '0.5rem' }}>{idx + 1}</td>
+                                <td style={{ fontSize: '0.75rem', padding: '0.5rem' }}>{item.payment_method || "—"}</td>
+                                <td style={{ fontSize: '0.75rem', padding: '0.5rem' }}>{item.reference_no || "—"}</td>
+                                <td style={{ fontSize: '0.75rem', padding: '0.5rem' }}>{item.description}</td>
+                                <td style={{ fontSize: '0.75rem', padding: '0.5rem', textAlign: 'right', fontWeight: 600 }}>{symbol}{Number(item.amount).toFixed(2)}</td>
+                              </tr>
+                            ))}
+                            {[...Array(Math.max(0, 3 - selectedExpense.items.length))].map((_, i) => (
+                              <tr key={`empty-${i}`} style={{ height: '2rem', borderBottom: '1px solid #e2e8f0' }}>
+                                <td colSpan={5}></td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '2.5rem' }}>
+                          <div style={{ width: '150px', textAlign: 'center' }}>
+                            <div style={{ borderTop: '1px solid #1a1a1a', paddingTop: '0.25rem', fontSize: '0.75rem', fontWeight: 700, color: '#1e3a8a' }}>Received by</div>
+                          </div>
+                          <div style={{ width: '150px', textAlign: 'center' }}>
+                            <div style={{ borderTop: '1px solid #1a1a1a', paddingTop: '0.25rem', fontSize: '0.75rem', fontWeight: 700, color: '#1e3a8a' }}>Client</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Duplicate Copy Preview Card */}
+              {includeOfficeCopy && (
+                excludedPages.has("duplicate") ? (
+                  <div className="excluded-page-placeholder">
+                    <div className="excluded-page-text">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                      </svg>
+                      <span>Duplicate Payment Voucher (Office Copy) - Excluded from Print</span>
+                    </div>
+                    <button type="button" className="page-restore-btn" onClick={() => handleToggleExclude("duplicate")}>
+                      Restore Page
+                    </button>
+                  </div>
+                ) : (
+                  <div className="preview-page-card">
+                    <div className="preview-page-header">
+                      <span className="preview-page-title">Duplicate Payment Voucher (Office Copy)</span>
+                      <button type="button" className="page-exclude-btn" onClick={() => handleToggleExclude("duplicate")}>
+                        Exclude Page
+                      </button>
+                    </div>
+                    <div className="card-body" style={{ padding: '2rem', backgroundColor: '#fff', color: '#1a1a1a', fontFamily: "'Inter', sans-serif" }}>
+                      <div className="voucher-preview-scroll">
+                        <div className="voucher-preview-container" style={{ border: '1px dashed #718096', position: 'relative' }}>
+                          <div style={{ position: 'absolute', top: '-10px', left: '20px', backgroundColor: '#fff', padding: '0 0.5rem', fontSize: '0.7rem', fontWeight: 700, color: '#718096' }}>OFFICE COPY (DUPLICATE)</div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '2px solid #e2e8f0', paddingBottom: '1.5rem', marginBottom: '1.5rem' }}>
+                            <div>
+                              <img src="/Emertech.png" alt="Emertech Logo" style={{ height: '70px', marginBottom: '0.5rem' }} />
+                              <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0 }}>Emertech Innovations Pvt. Ltd.</h3>
+                              <p style={{ fontSize: '0.7rem', color: '#4a5568', margin: 0, maxWidth: '250px' }}>A-609, Shelton Sapphaire, sector 15, CBD Belapur, Navi Mumbai</p>
+                            </div>
+                            <div style={{ textAlign: 'right' }}>
+                              <h4 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1e3a8a', margin: '0 0 0.5rem 0', textTransform: 'uppercase' }}>Payment Voucher</h4>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'flex-end' }}>
+                                <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#1e3a8a' }}>RECEIPT No.</span>
+                                <span style={{ backgroundColor: '#edf2f7', padding: '0.3rem 0.75rem', borderRadius: '4px', fontWeight: 700, fontSize: '0.9rem' }}>{selectedExpense.receipt_no || selectedExpense.id} (Office)</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+                            <div style={{ borderBottom: '1px solid #cbd5e0', paddingBottom: '0.25rem' }}>
+                              <span style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, color: '#1e3a8a', textTransform: 'uppercase' }}>Date</span>
+                              <span style={{ fontSize: '0.9rem' }}>{selectedExpense.date}</span>
+                            </div>
+                            <div style={{ borderBottom: '1px solid #cbd5e0', paddingBottom: '0.25rem' }}>
+                              <span style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, color: '#1e3a8a', textTransform: 'uppercase' }}>Amount</span>
+                              <span style={{ fontSize: '0.9rem', fontWeight: 700 }}>{symbol}{calculateTotal(selectedExpense.items).toFixed(2)}</span>
+                            </div>
+                            <div style={{ borderBottom: '1px solid #cbd5e0', paddingBottom: '0.25rem' }}>
+                              <span style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, color: '#1e3a8a', textTransform: 'uppercase' }}>From</span>
+                              <span style={{ fontSize: '0.9rem' }}>{selectedExpense.name} ({selectedExpense.department})</span>
+                            </div>
+                            <div style={{ borderBottom: '1px solid #cbd5e0', paddingBottom: '0.25rem' }}>
+                              <span style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, color: '#1e3a8a', textTransform: 'uppercase' }}>Payment For</span>
+                              <span style={{ fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'block' }}>
+                                {Array.from(new Set(selectedExpense.items.map(i => i.category))).join(", ")}
+                              </span>
+                            </div>
+                          </div>
+
+                          <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '1.5rem' }}>
+                            <thead>
+                              <tr style={{ backgroundColor: '#1e3a8a', color: '#fff' }}>
+                                <th style={{ fontSize: '0.7rem', padding: '0.5rem', textAlign: 'left', borderRadius: '4px 0 0 0' }}>Sr.</th>
+                                <th style={{ fontSize: '0.7rem', padding: '0.5rem', textAlign: 'left' }}>Method</th>
+                                <th style={{ fontSize: '0.7rem', padding: '0.5rem', textAlign: 'left' }}>Ref No.</th>
+                                <th style={{ fontSize: '0.7rem', padding: '0.5rem', textAlign: 'left' }}>Description</th>
+                                <th style={{ fontSize: '0.7rem', padding: '0.5rem', textAlign: 'right', borderRadius: '0 4px 0 0' }}>Amount</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {selectedExpense.items.map((item, idx) => (
+                                <tr key={idx} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                                  <td style={{ fontSize: '0.75rem', padding: '0.5rem' }}>{idx + 1}</td>
+                                  <td style={{ fontSize: '0.75rem', padding: '0.5rem' }}>{item.payment_method || "—"}</td>
+                                  <td style={{ fontSize: '0.75rem', padding: '0.5rem' }}>{item.reference_no || "—"}</td>
+                                  <td style={{ fontSize: '0.75rem', padding: '0.5rem' }}>{item.description}</td>
+                                  <td style={{ fontSize: '0.75rem', padding: '0.5rem', textAlign: 'right', fontWeight: 600 }}>{symbol}{Number(item.amount).toFixed(2)}</td>
+                                </tr>
+                              ))}
+                              {[...Array(Math.max(0, 3 - selectedExpense.items.length))].map((_, i) => (
+                                <tr key={`empty-${i}`} style={{ height: '2rem', borderBottom: '1px solid #e2e8f0' }}>
+                                  <td colSpan={5}></td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '2.5rem' }}>
+                            <div style={{ width: '150px', textAlign: 'center' }}>
+                              <div style={{ borderTop: '1px solid #1a1a1a', paddingTop: '0.25rem', fontSize: '0.75rem', fontWeight: 700, color: '#1e3a8a' }}>Received by</div>
+                            </div>
+                            <div style={{ width: '150px', textAlign: 'center' }}>
+                              <div style={{ borderTop: '1px solid #1a1a1a', paddingTop: '0.25rem', fontSize: '0.75rem', fontWeight: 700, color: '#1e3a8a' }}>Client</div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )
+              )}
+
+              {/* Proof Pages (Screen Preview) */}
+              {selectedExpense.items.map((item, itemIdx) => {
+                const paths = getProofPaths(item.proof_path);
+                return paths.map((path, fileIdx) => {
+                  const isPDF = path.toLowerCase().endsWith('.pdf');
+                  if (isPDF) {
+                    return (
+                      <PDFRenderer
+                        key={`pdf-${itemIdx}-${fileIdx}`}
+                        url={`/api/file?url=${encodeURIComponent(path)}`}
+                        itemIndex={itemIdx}
+                        fileIndex={fileIdx}
+                        category={item.category}
+                        amount={item.amount}
+                        symbol={symbol}
+                        expenseId={selectedExpense.id}
+                        excludedPages={excludedPages}
+                        onToggleExclude={handleToggleExclude}
+                        isPrint={false}
+                      />
+                    );
+                  } else {
+                    const key = `proof_${itemIdx}_${fileIdx}_0`;
+                    const isExcluded = excludedPages.has(key);
+                    const proofSrc = `/api/file?url=${encodeURIComponent(path)}`;
+                    if (isExcluded) {
+                      return (
+                        <div key={key} className="excluded-page-placeholder">
+                          <div className="excluded-page-text">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                            </svg>
+                            <span>Proof {itemIdx + 1} (Image File {fileIdx + 1}) - Excluded from Print</span>
+                          </div>
+                          <button type="button" className="page-restore-btn" onClick={() => handleToggleExclude(key)}>
+                            Restore Page
+                          </button>
+                        </div>
+                      );
+                    }
+                    return (
+                      <div key={key} className="preview-page-card">
+                        <div className="preview-page-header">
+                          <span className="preview-page-title">Proof {itemIdx + 1}: {item.category} (Image File {fileIdx + 1})</span>
+                          <button type="button" className="page-exclude-btn" onClick={() => handleToggleExclude(key)}>
+                            Exclude Page
+                          </button>
+                        </div>
+                        <div style={{ padding: '1.5rem', backgroundColor: '#fff', display: 'flex', justifyContent: 'center' }}>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={proofSrc} alt={`Proof ${itemIdx + 1}`} style={{ maxWidth: '100%', maxHeight: '400px', objectFit: 'contain', border: '1px solid #ddd' }} />
+                        </div>
+                      </div>
+                    );
+                  }
+                });
+              })}
             </div>
 
             <div className="review-footer-flex">
@@ -661,133 +975,135 @@ export default function HRDashboard() {
       {selectedExpense && (
         <div className="print-container">
           {/* ORIGINAL COPY */}
-          <div
-            className="print-slip"
-            style={
-              selectedExpense.items.length > 5 ?
-                ({
-                  breakInside: "auto",
-                  pageBreakInside: "auto",
-                } as React.CSSProperties)
-              : {}
-            }
-          >
-            <div className="voucher-header">
-              <div className="company-info">
-                <img
-                  src="/Emertech.png"
-                  alt="Emertech Logo"
-                  style={{
-                    width: "auto",
-                    height: "85px",
-                    marginBottom: "0.75rem",
-                  }}
-                />
-                <h1>Emertech Innovations Pvt. Ltd.</h1>
-                <p>
-                  A-609, Shelton Sapphaire, sector 15, CBD Belapur, Navi Mumbai
-                </p>
-              </div>
-              <div className="voucher-title-section">
-                <h2 className="voucher-title">Payment Voucher</h2>
-                <div className="receipt-no-box">
-                  <span className="receipt-label">RECEIPT No.</span>
-                  <div className="receipt-value">
-                    {selectedExpense.receipt_no?.toString() ||
-                      selectedExpense.id.toString()}
+          {!excludedPages.has("original") && (
+            <div
+              className="print-slip"
+              style={
+                selectedExpense.items.length > 5 ?
+                  ({
+                    breakInside: "auto",
+                    pageBreakInside: "auto",
+                  } as React.CSSProperties)
+                : {}
+              }
+            >
+              <div className="voucher-header">
+                <div className="company-info">
+                  <img
+                    src="/Emertech.png"
+                    alt="Emertech Logo"
+                    style={{
+                      width: "auto",
+                      height: "85px",
+                      marginBottom: "0.75rem",
+                    }}
+                  />
+                  <h1>Emertech Innovations Pvt. Ltd.</h1>
+                  <p>
+                    A-609, Shelton Sapphaire, sector 15, CBD Belapur, Navi Mumbai
+                  </p>
+                </div>
+                <div className="voucher-title-section">
+                  <h2 className="voucher-title">Payment Voucher</h2>
+                  <div className="receipt-no-box">
+                    <span className="receipt-label">RECEIPT No.</span>
+                    <div className="receipt-value">
+                      {selectedExpense.receipt_no?.toString() ||
+                        selectedExpense.id.toString()}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
 
-            <div className="voucher-details-grid">
-              <div className="detail-item">
-                <span className="detail-label">Date</span>
-                <div className="detail-value">{selectedExpense.date}</div>
-              </div>
-              <div className="detail-item">
-                <span className="detail-label">Amount</span>
-                <div className="detail-value">
-                  {symbol}
-                  {calculateTotal(selectedExpense.items).toFixed(2)}
+              <div className="voucher-details-grid">
+                <div className="detail-item">
+                  <span className="detail-label">Date</span>
+                  <div className="detail-value">{selectedExpense.date}</div>
                 </div>
-              </div>
-              <div className="detail-item">
-                <span className="detail-label">From</span>
-                <div className="detail-value">{selectedExpense.name}</div>
-              </div>
-              <div className="detail-item payment-for-row">
-                <span className="detail-label">Payment For</span>
-                <div className="detail-value">
-                  {Array.from(
-                    new Set(
-                      selectedExpense.items.map(
-                        (i: { category: string }) => i.category,
+                <div className="detail-item">
+                  <span className="detail-label">Amount</span>
+                  <div className="detail-value">
+                    {symbol}
+                    {calculateTotal(selectedExpense.items).toFixed(2)}
+                  </div>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">From</span>
+                  <div className="detail-value">{selectedExpense.name}</div>
+                </div>
+                <div className="detail-item payment-for-row">
+                  <span className="detail-label">Payment For</span>
+                  <div className="detail-value">
+                    {Array.from(
+                      new Set(
+                        selectedExpense.items.map(
+                          (i: { category: string }) => i.category,
+                        ),
                       ),
+                    ).join(", ")}
+                  </div>
+                </div>
+              </div>
+
+              <table className="voucher-table">
+                <thead>
+                  <tr>
+                    <th style={{ width: "60px" }}>Sr. No.</th>
+                    <th>Payment Method</th>
+                    <th>Reference No.</th>
+                    <th>Description</th>
+                    <th style={{ textAlign: "right" }}>Amount ({symbol})</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {selectedExpense.items.map(
+                    (
+                      item: {
+                        description: string;
+                        amount: number;
+                        payment_method?: string;
+                        reference_no?: string;
+                      },
+                      idx: number,
+                    ) => (
+                      <tr key={idx}>
+                        <td>{idx + 1}</td>
+                        <td>{item.payment_method || "—"}</td>
+                        <td>{item.reference_no || "—"}</td>
+                        <td>{item.description}</td>
+                        <td style={{ textAlign: "right" }}>
+                          {item.amount.toFixed(2)}
+                        </td>
+                      </tr>
                     ),
-                  ).join(", ")}
+                  )}
+                  {[...Array(Math.max(0, 3 - selectedExpense.items.length))].map(
+                    (_, i) => (
+                      <tr key={`empty-${i}`} style={{ height: "3rem" }}>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                      </tr>
+                    ),
+                  )}
+                </tbody>
+              </table>
+
+              <div className="voucher-footer">
+                <div className="sig-block">
+                  <div className="sig-line">Received by</div>
+                </div>
+                <div className="sig-block">
+                  <div className="sig-line">Client</div>
                 </div>
               </div>
             </div>
-
-            <table className="voucher-table">
-              <thead>
-                <tr>
-                  <th style={{ width: "60px" }}>Sr. No.</th>
-                  <th>Payment Method</th>
-                  <th>Reference No.</th>
-                  <th>Description</th>
-                  <th style={{ textAlign: "right" }}>Amount ({symbol})</th>
-                </tr>
-              </thead>
-              <tbody>
-                {selectedExpense.items.map(
-                  (
-                    item: {
-                      description: string;
-                      amount: number;
-                      payment_method?: string;
-                      reference_no?: string;
-                    },
-                    idx: number,
-                  ) => (
-                    <tr key={idx}>
-                      <td>{idx + 1}</td>
-                      <td>{item.payment_method || "—"}</td>
-                      <td>{item.reference_no || "—"}</td>
-                      <td>{item.description}</td>
-                      <td style={{ textAlign: "right" }}>
-                        {item.amount.toFixed(2)}
-                      </td>
-                    </tr>
-                  ),
-                )}
-                {[...Array(Math.max(0, 3 - selectedExpense.items.length))].map(
-                  (_, i) => (
-                    <tr key={`empty-${i}`} style={{ height: "3rem" }}>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                    </tr>
-                  ),
-                )}
-              </tbody>
-            </table>
-
-            <div className="voucher-footer">
-              <div className="sig-block">
-                <div className="sig-line">Received by</div>
-              </div>
-              <div className="sig-block">
-                <div className="sig-line">Client</div>
-              </div>
-            </div>
-          </div>
+          )}
 
           {/* DUPLICATE COPY */}
-          {includeOfficeCopy && (
+          {includeOfficeCopy && !excludedPages.has("duplicate") && (
             <div
               className={`print-slip ${selectedExpense.items.length <= 3 ? "duplicate-slip" : ""}`}
               style={
@@ -922,36 +1238,44 @@ export default function HRDashboard() {
             </div>
           )}
 
-          {/* PROOF DOCUMENTS (Each on its own page) */}
-          {selectedExpense.items
-            .filter((item) => item.proof_path)
-            .map(
-              (
-                item: ExpenseItem,
-                idx: number,
-              ) => (
-                <div
-                  key={`proof-${idx}`}
-                  className="print-proof-page"
-                  style={{ pageBreakBefore: "always", breakBefore: "page" }}
-                >
-                  <div className="proof-header">
-                    <h3>
-                      Proof for Item {idx + 1}: {item.category}
-                    </h3>
-                    <p>
-                      Reimbursement ID: {selectedExpense.id} | Amount: {symbol}
-                      {item.amount.toFixed(2)}
-                    </p>
-                  </div>
-                  <div className="proof-content">
-                    {item.proof_path!.toLowerCase().endsWith(".pdf") ?
-                      <PDFRenderer
-                        url={`/api/file?url=${encodeURIComponent(item.proof_path!)}`}
-                      />
-                    : <img
-                        src={`/api/file?url=${encodeURIComponent(item.proof_path!)}`}
-                        alt={`Proof ${idx + 1}`}
+          {/* PROOF DOCUMENTS */}
+          {selectedExpense.items.map((item, itemIdx) => {
+            const paths = getProofPaths(item.proof_path);
+            return paths.map((path, fileIdx) => {
+              const isPDF = path.toLowerCase().endsWith('.pdf');
+              if (isPDF) {
+                return (
+                  <PDFRenderer
+                    key={`pdf-print-${itemIdx}-${fileIdx}`}
+                    url={`/api/file?url=${encodeURIComponent(path)}`}
+                    itemIndex={itemIdx}
+                    fileIndex={fileIdx}
+                    category={item.category}
+                    amount={item.amount}
+                    symbol={symbol}
+                    expenseId={selectedExpense.id}
+                    excludedPages={excludedPages}
+                    isPrint={true}
+                  />
+                );
+              } else {
+                const key = `proof_${itemIdx}_${fileIdx}_0`;
+                if (excludedPages.has(key)) return null;
+                const proofSrc = `/api/file?url=${encodeURIComponent(path)}`;
+                return (
+                  <div
+                    key={key}
+                    className="print-proof-item"
+                  >
+                    <div className="proof-header">
+                      <h3>Proof for Item {itemIdx + 1}: {item.category}</h3>
+                      <p>Reimbursement ID: {selectedExpense.id} | Amount: {symbol}{item.amount.toFixed(2)}</p>
+                    </div>
+                    <div className="proof-content">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={proofSrc}
+                        alt={`Proof ${itemIdx + 1}`}
                         style={{
                           maxWidth: "100%",
                           maxHeight: "19cm",
@@ -961,11 +1285,12 @@ export default function HRDashboard() {
                           border: "1px solid #ddd",
                         }}
                       />
-                    }
+                    </div>
                   </div>
-                </div>
-              ),
-            )}
+                );
+              }
+            });
+          })}
         </div>
       )}
       {/* Document Preview Modal */}
