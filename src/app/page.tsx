@@ -190,84 +190,8 @@ export default function SubmitExpense() {
           </div>
           <div className="card-body" style={{ padding: '2rem', backgroundColor: '#fff', color: '#1a1a1a', fontFamily: "'Inter', sans-serif" }}>
             
-            <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '2rem', marginBottom: '2rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '2px solid #e2e8f0', paddingBottom: '1.5rem', marginBottom: '1.5rem' }}>
-                <div>
-                  <img src="/Emertech.png" alt="Emertech Logo" style={{ height: '70px', marginBottom: '0.5rem' }} />
-                  <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0 }}>Emertech Innovations Pvt. Ltd.</h3>
-                  <p style={{ fontSize: '0.7rem', color: '#4a5568', margin: 0, maxWidth: '250px' }}>A-609, Shelton Sapphaire, sector 15, CBD Belapur, Navi Mumbai</p>
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                  <h4 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1e3a8a', margin: '0 0 0.5rem 0', textTransform: 'uppercase' }}>Payment Voucher</h4>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'flex-end' }}>
-                    <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#1e3a8a' }}>RECEIPT No.</span>
-                    <span style={{ backgroundColor: '#edf2f7', padding: '0.3rem 0.75rem', borderRadius: '4px', fontWeight: 700, fontSize: '0.9rem' }}>{submittedExpense.receipt_no || submittedExpense.id}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
-                <div style={{ borderBottom: '1px solid #cbd5e0', paddingBottom: '0.25rem' }}>
-                  <span style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, color: '#1e3a8a', textTransform: 'uppercase' }}>Date</span>
-                  <span style={{ fontSize: '0.9rem' }}>{submittedExpense.date}</span>
-                </div>
-                <div style={{ borderBottom: '1px solid #cbd5e0', paddingBottom: '0.25rem' }}>
-                  <span style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, color: '#1e3a8a', textTransform: 'uppercase' }}>Amount</span>
-                  <span style={{ fontSize: '0.9rem', fontWeight: 700 }}>{symbol}{calculateItemsTotal(submittedExpense.items).toFixed(2)}</span>
-                </div>
-                <div style={{ borderBottom: '1px solid #cbd5e0', paddingBottom: '0.25rem' }}>
-                  <span style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, color: '#1e3a8a', textTransform: 'uppercase' }}>From</span>
-                  <span style={{ fontSize: '0.9rem' }}>{submittedExpense.name} ({submittedExpense.department})</span>
-                </div>
-                <div style={{ borderBottom: '1px solid #cbd5e0', paddingBottom: '0.25rem' }}>
-                  <span style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, color: '#1e3a8a', textTransform: 'uppercase' }}>Payment For</span>
-                  <span style={{ fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'block' }}>
-                    {Array.from(new Set(submittedExpense.items.map(i => i.category))).join(", ")}
-                  </span>
-                </div>
-              </div>
-
-              <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '1.5rem' }}>
-                <thead>
-                  <tr style={{ backgroundColor: '#1e3a8a', color: '#fff' }}>
-                    <th style={{ fontSize: '0.7rem', padding: '0.5rem', textAlign: 'left', borderRadius: '4px 0 0 0' }}>Sr.</th>
-                    <th style={{ fontSize: '0.7rem', padding: '0.5rem', textAlign: 'left' }}>Method</th>
-                    <th style={{ fontSize: '0.7rem', padding: '0.5rem', textAlign: 'left' }}>Ref No.</th>
-                    <th style={{ fontSize: '0.7rem', padding: '0.5rem', textAlign: 'left' }}>Description</th>
-                    <th style={{ fontSize: '0.7rem', padding: '0.5rem', textAlign: 'right', borderRadius: '0 4px 0 0' }}>Amount</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {submittedExpense.items.map((item, idx) => (
-                    <tr key={idx} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                      <td style={{ fontSize: '0.75rem', padding: '0.5rem' }}>{idx + 1}</td>
-                      <td style={{ fontSize: '0.75rem', padding: '0.5rem' }}>{item.payment_method || "—"}</td>
-                      <td style={{ fontSize: '0.75rem', padding: '0.5rem' }}>{item.reference_no || "—"}</td>
-                      <td style={{ fontSize: '0.75rem', padding: '0.5rem' }}>{item.description}</td>
-                      <td style={{ fontSize: '0.75rem', padding: '0.5rem', textAlign: 'right', fontWeight: 600 }}>{symbol}{Number(item.amount).toFixed(2)}</td>
-                    </tr>
-                  ))}
-                  {[...Array(Math.max(0, 3 - submittedExpense.items.length))].map((_, i) => (
-                    <tr key={`empty-${i}`} style={{ height: '2rem', borderBottom: '1px solid #e2e8f0' }}>
-                      <td colSpan={5}></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '2.5rem' }}>
-                <div style={{ width: '150px', textAlign: 'center' }}>
-                  <div style={{ borderTop: '1px solid #1a1a1a', paddingTop: '0.25rem', fontSize: '0.75rem', fontWeight: 700, color: '#1e3a8a' }}>Received by</div>
-                </div>
-                <div style={{ width: '150px', textAlign: 'center' }}>
-                  <div style={{ borderTop: '1px solid #1a1a1a', paddingTop: '0.25rem', fontSize: '0.75rem', fontWeight: 700, color: '#1e3a8a' }}>Client</div>
-                </div>
-              </div>
-            </div>
-
-            {includeOfficeCopy && (
-              <div style={{ border: '1px dashed #718096', borderRadius: '8px', padding: '2rem', backgroundColor: '#fcfcfc', position: 'relative' }}>
-                <div style={{ position: 'absolute', top: '-10px', left: '20px', backgroundColor: '#fff', padding: '0 0.5rem', fontSize: '0.7rem', fontWeight: 700, color: '#718096' }}>OFFICE COPY (DUPLICATE)</div>
+            <div className="voucher-preview-scroll">
+              <div className="voucher-preview-container">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '2px solid #e2e8f0', paddingBottom: '1.5rem', marginBottom: '1.5rem' }}>
                   <div>
                     <img src="/Emertech.png" alt="Emertech Logo" style={{ height: '70px', marginBottom: '0.5rem' }} />
@@ -278,7 +202,7 @@ export default function SubmitExpense() {
                     <h4 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1e3a8a', margin: '0 0 0.5rem 0', textTransform: 'uppercase' }}>Payment Voucher</h4>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'flex-end' }}>
                       <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#1e3a8a' }}>RECEIPT No.</span>
-                      <span style={{ backgroundColor: '#edf2f7', padding: '0.3rem 0.75rem', borderRadius: '4px', fontWeight: 700, fontSize: '0.9rem' }}>{submittedExpense.receipt_no || submittedExpense.id} (Office)</span>
+                      <span style={{ backgroundColor: '#edf2f7', padding: '0.3rem 0.75rem', borderRadius: '4px', fontWeight: 700, fontSize: '0.9rem' }}>{submittedExpense.receipt_no || submittedExpense.id}</span>
                     </div>
                   </div>
                 </div>
@@ -338,6 +262,86 @@ export default function SubmitExpense() {
                   </div>
                   <div style={{ width: '150px', textAlign: 'center' }}>
                     <div style={{ borderTop: '1px solid #1a1a1a', paddingTop: '0.25rem', fontSize: '0.75rem', fontWeight: 700, color: '#1e3a8a' }}>Client</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {includeOfficeCopy && (
+              <div className="voucher-preview-scroll">
+                <div className="voucher-preview-container" style={{ border: '1px dashed #718096', position: 'relative' }}>
+                  <div style={{ position: 'absolute', top: '-10px', left: '20px', backgroundColor: '#fff', padding: '0 0.5rem', fontSize: '0.7rem', fontWeight: 700, color: '#718096' }}>OFFICE COPY (DUPLICATE)</div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '2px solid #e2e8f0', paddingBottom: '1.5rem', marginBottom: '1.5rem' }}>
+                    <div>
+                      <img src="/Emertech.png" alt="Emertech Logo" style={{ height: '70px', marginBottom: '0.5rem' }} />
+                      <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0 }}>Emertech Innovations Pvt. Ltd.</h3>
+                      <p style={{ fontSize: '0.7rem', color: '#4a5568', margin: 0, maxWidth: '250px' }}>A-609, Shelton Sapphaire, sector 15, CBD Belapur, Navi Mumbai</p>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <h4 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1e3a8a', margin: '0 0 0.5rem 0', textTransform: 'uppercase' }}>Payment Voucher</h4>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'flex-end' }}>
+                        <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#1e3a8a' }}>RECEIPT No.</span>
+                        <span style={{ backgroundColor: '#edf2f7', padding: '0.3rem 0.75rem', borderRadius: '4px', fontWeight: 700, fontSize: '0.9rem' }}>{submittedExpense.receipt_no || submittedExpense.id} (Office)</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+                    <div style={{ borderBottom: '1px solid #cbd5e0', paddingBottom: '0.25rem' }}>
+                      <span style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, color: '#1e3a8a', textTransform: 'uppercase' }}>Date</span>
+                      <span style={{ fontSize: '0.9rem' }}>{submittedExpense.date}</span>
+                    </div>
+                    <div style={{ borderBottom: '1px solid #cbd5e0', paddingBottom: '0.25rem' }}>
+                      <span style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, color: '#1e3a8a', textTransform: 'uppercase' }}>Amount</span>
+                      <span style={{ fontSize: '0.9rem', fontWeight: 700 }}>{symbol}{calculateItemsTotal(submittedExpense.items).toFixed(2)}</span>
+                    </div>
+                    <div style={{ borderBottom: '1px solid #cbd5e0', paddingBottom: '0.25rem' }}>
+                      <span style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, color: '#1e3a8a', textTransform: 'uppercase' }}>From</span>
+                      <span style={{ fontSize: '0.9rem' }}>{submittedExpense.name} ({submittedExpense.department})</span>
+                    </div>
+                    <div style={{ borderBottom: '1px solid #cbd5e0', paddingBottom: '0.25rem' }}>
+                      <span style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, color: '#1e3a8a', textTransform: 'uppercase' }}>Payment For</span>
+                      <span style={{ fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'block' }}>
+                        {Array.from(new Set(submittedExpense.items.map(i => i.category))).join(", ")}
+                      </span>
+                    </div>
+                  </div>
+
+                  <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '1.5rem' }}>
+                    <thead>
+                      <tr style={{ backgroundColor: '#1e3a8a', color: '#fff' }}>
+                        <th style={{ fontSize: '0.7rem', padding: '0.5rem', textAlign: 'left', borderRadius: '4px 0 0 0' }}>Sr.</th>
+                        <th style={{ fontSize: '0.7rem', padding: '0.5rem', textAlign: 'left' }}>Method</th>
+                        <th style={{ fontSize: '0.7rem', padding: '0.5rem', textAlign: 'left' }}>Ref No.</th>
+                        <th style={{ fontSize: '0.7rem', padding: '0.5rem', textAlign: 'left' }}>Description</th>
+                        <th style={{ fontSize: '0.7rem', padding: '0.5rem', textAlign: 'right', borderRadius: '0 4px 0 0' }}>Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {submittedExpense.items.map((item, idx) => (
+                        <tr key={idx} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                          <td style={{ fontSize: '0.75rem', padding: '0.5rem' }}>{idx + 1}</td>
+                          <td style={{ fontSize: '0.75rem', padding: '0.5rem' }}>{item.payment_method || "—"}</td>
+                          <td style={{ fontSize: '0.75rem', padding: '0.5rem' }}>{item.reference_no || "—"}</td>
+                          <td style={{ fontSize: '0.75rem', padding: '0.5rem' }}>{item.description}</td>
+                          <td style={{ fontSize: '0.75rem', padding: '0.5rem', textAlign: 'right', fontWeight: 600 }}>{symbol}{Number(item.amount).toFixed(2)}</td>
+                        </tr>
+                      ))}
+                      {[...Array(Math.max(0, 3 - submittedExpense.items.length))].map((_, i) => (
+                        <tr key={`empty-${i}`} style={{ height: '2rem', borderBottom: '1px solid #e2e8f0' }}>
+                          <td colSpan={5}></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '2.5rem' }}>
+                    <div style={{ width: '150px', textAlign: 'center' }}>
+                      <div style={{ borderTop: '1px solid #1a1a1a', paddingTop: '0.25rem', fontSize: '0.75rem', fontWeight: 700, color: '#1e3a8a' }}>Received by</div>
+                    </div>
+                    <div style={{ width: '150px', textAlign: 'center' }}>
+                      <div style={{ borderTop: '1px solid #1a1a1a', paddingTop: '0.25rem', fontSize: '0.75rem', fontWeight: 700, color: '#1e3a8a' }}>Client</div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -617,7 +621,7 @@ export default function SubmitExpense() {
               <label>Leave this field blank</label>
               <input type="text" name="honeypot" tabIndex={-1} autoComplete="off" value={honeypot} onChange={(e) => setHoneypot(e.target.value)} />
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
+            <div className="form-grid" style={{ marginBottom: '2rem' }}>
               <div>
                 <label className="form-label">Employee Name <span style={{ color: 'var(--danger, #ef4444)' }}>*</span></label>
                 <input required type="text" className="form-input" placeholder="John Doe" value={name} onChange={(e) => setName(e.target.value)} />
@@ -654,7 +658,7 @@ export default function SubmitExpense() {
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                     </button>
                   )}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '1rem' }}>
+                  <div className="form-grid" style={{ marginBottom: '1rem' }}>
                     <div>
                       <label className="form-label">Expense Category <span style={{ color: 'var(--danger, #ef4444)' }}>*</span></label>
                       <select required className="form-select" value={item.category} onChange={(e) => handleItemChange(index, 'category', e.target.value)}>
@@ -671,7 +675,7 @@ export default function SubmitExpense() {
                       <input required type="number" step="0.01" min="0" className="form-input" placeholder="0.00" value={item.amount} onChange={(e) => handleItemChange(index, 'amount', e.target.value)} />
                     </div>
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '1rem' }}>
+                  <div className="form-grid" style={{ marginBottom: '1rem' }}>
                     <div>
                       <label className="form-label">Payment Method</label>
                       <select className="form-select" value={item.paymentMethod || ""} onChange={(e) => handleItemChange(index, 'paymentMethod', e.target.value)}>
@@ -686,7 +690,7 @@ export default function SubmitExpense() {
                       <input type="text" className="form-input" placeholder="Transaction ID, Cheque No..." value={item.referenceNo || ""} onChange={(e) => handleItemChange(index, 'referenceNo', e.target.value)} />
                     </div>
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1.5rem', marginBottom: '1rem' }}>
+                  <div className="form-grid-2-1" style={{ marginBottom: '1rem' }}>
                     <div>
                       <label className="form-label">Description / Business Purpose <span style={{ color: 'var(--danger, #ef4444)' }}>*</span></label>
                       <textarea required className="form-textarea" rows={1} placeholder="Explain the purpose..." value={item.description} onChange={(e) => handleItemChange(index, 'description', e.target.value)}></textarea>
@@ -715,7 +719,7 @@ export default function SubmitExpense() {
               ))}
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '2rem' }}>
+            <div className="review-footer-flex form-actions-footer" style={{ marginTop: '2rem' }}>
               <button type="button" className="btn btn-secondary">Cancel</button>
               <button type="submit" className="btn btn-primary" disabled={submitting}>
                 {submitting ? (

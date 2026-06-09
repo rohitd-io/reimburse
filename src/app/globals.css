@@ -492,3 +492,153 @@ tr:hover td {
     margin: 0 auto;
   }
 }
+
+/* Responsive Grid layouts */
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.form-grid-2-1 {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.review-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 2rem;
+}
+
+/* Flex layouts */
+.header-flex {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.header-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+.review-info-flex {
+  margin-bottom: 1.5rem;
+  display: flex;
+  gap: 2rem;
+}
+
+.review-footer-flex {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1.5rem;
+  margin-top: 2rem;
+  border-top: 1px solid var(--border);
+  padding-top: 1.5rem;
+  align-items: center;
+}
+
+/* Scroll wrapper for printed slips preview on small screens */
+.voucher-preview-scroll {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  margin-bottom: 2rem;
+}
+
+.voucher-preview-container {
+  min-width: 650px;
+  padding: 1.5rem;
+  background-color: #fff;
+}
+
+/* Mobile Responsiveness Media Queries */
+@media screen and (max-width: 768px) {
+  .main-content {
+    padding: 1rem;
+  }
+
+  .header h1 {
+    font-size: 1.5rem;
+  }
+
+  /* Grid adjustments to stack */
+  .form-grid, .form-grid-2-1, .review-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1rem;
+  }
+
+  /* Flex adjustments to stack */
+  .header-flex {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 1rem;
+  }
+
+  .header-controls {
+    align-items: flex-start !important;
+    width: 100%;
+  }
+  
+  .header-controls > button, .header-controls > div {
+    align-self: stretch !important;
+    justify-content: center !important;
+  }
+
+  .review-info-flex {
+    flex-direction: column !important;
+    gap: 0.5rem !important;
+    margin-bottom: 1rem;
+  }
+
+  .review-footer-flex {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 1rem;
+  }
+  
+  .review-footer-flex > label {
+    justify-content: flex-start;
+  }
+
+  .review-footer-flex > div {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    width: 100%;
+  }
+
+  .review-footer-flex button {
+    width: 100% !important;
+    justify-content: center;
+  }
+  
+  /* Form actions footer (Submit Page) */
+  .form-actions-footer {
+    flex-direction: column-reverse !important;
+    gap: 0.75rem;
+  }
+  
+  .form-actions-footer button {
+    width: 100% !important;
+    justify-content: center;
+  }
+
+  /* Modal layout on mobile */
+  .modal-overlay {
+    padding: 0.5rem !important;
+  }
+
+  .modal-container {
+    height: 95vh !important;
+  }
+}
