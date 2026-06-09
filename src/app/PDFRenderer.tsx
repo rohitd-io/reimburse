@@ -2,16 +2,9 @@
 import "./polyfill";
 import { useEffect, useState } from "react";
 import * as pdfjsLib from "pdfjs-dist";
-// @ts-ignore
-import * as pdfjsWorker from "pdfjs-dist/build/pdf.worker.mjs";
 
-if (typeof window !== "undefined" && !pdfjsLib.GlobalWorkerOptions.workerPort) {
-  try {
-    // @ts-ignore
-    pdfjsLib.GlobalWorkerOptions.workerPort = new pdfjsWorker.WorkerMessageHandler();
-  } catch (e) {
-    console.error("Failed to initialize PDF.js fake worker:", e);
-  }
+if (typeof window !== "undefined" && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.mjs";
 }
 
 // A4 at 96dpi: 210mm = ~794px, minus 2×1cm margin = 190mm = ~718px

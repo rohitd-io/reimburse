@@ -967,10 +967,9 @@ export default function HRDashboard() {
                   className="btn btn-primary"
                   onClick={handlePrint}
                   style={{ backgroundColor: "#10b981" }}
-                  disabled={isAnyPDFLoading}
                 >
                   {isAnyPDFLoading ? (
-                    "Loading PDFs..."
+                    "Approve & Print Slip (PDFs Loading...)"
                   ) : (
                     <>
                       <svg

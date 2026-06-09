@@ -173,7 +173,6 @@ export default function SubmitExpense() {
   };
 
   const handlePrint = () => {
-    if (isAnyPDFLoading) return;
     window.print();
   };
 
@@ -184,6 +183,15 @@ export default function SubmitExpense() {
           window.print();
           setAutoPrintTriggered(true);
         }, 500);
+        return () => clearTimeout(timer);
+      } else {
+        // Fallback: trigger print anyway after 3 seconds if PDFs are still loading
+        const timer = setTimeout(() => {
+          if (!autoPrintTriggered) {
+            window.print();
+            setAutoPrintTriggered(true);
+          }
+        }, 3000);
         return () => clearTimeout(timer);
       }
     }
@@ -225,10 +233,9 @@ export default function SubmitExpense() {
                   onClick={handlePrint} 
                   className="btn btn-primary" 
                   style={{ backgroundColor: '#319795' }}
-                  disabled={isAnyPDFLoading}
                 >
                   {isAnyPDFLoading ? (
-                    "Loading PDFs..."
+                    "Print Voucher (PDFs Loading...)"
                   ) : (
                     <>
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
