@@ -77,7 +77,7 @@ export async function verifyOtp(email: string, otp: string) {
   // Set cookie securely
   (await cookies()).set("auth_token", "true", {
     path: "/",
-    maxAge: 86400 * 7, // 7 days
+    maxAge: 3600, // 1 hour
     httpOnly: false, 
     secure: process.env.NODE_ENV === "production"
   });
