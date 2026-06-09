@@ -62,8 +62,11 @@ function trimCanvasWhitespace(canvas: HTMLCanvasElement): HTMLCanvasElement | nu
   return trimmed;
 }
 
+import { createPortal } from "react-dom";
+
 interface PDFRendererProps {
-  url: string;
+  url?: string;
+  file?: File;
   itemIndex: number;
   fileIndex: number;
   category: string;
@@ -72,11 +75,12 @@ interface PDFRendererProps {
   expenseId: string | number;
   excludedPages: Set<string>;
   onToggleExclude?: (key: string) => void;
-  isPrint?: boolean;
+  onLoadingStateChange?: (key: string, isLoading: boolean) => void;
 }
 
 export default function PDFRenderer({
   url,
+  file,
   itemIndex,
   fileIndex,
   category,
@@ -85,22 +89,59 @@ export default function PDFRenderer({
   expenseId,
   excludedPages,
   onToggleExclude,
-  isPrint = false,
+  onLoadingStateChange,
 }: PDFRendererProps) {
   const [pages, setPages] = useState<{ src: string; width: number; height: number }[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const key = `pdf-${itemIndex}-${fileIndex}`;
+    let objectUrl = "";
+    let isCancelled = false;
+    let currentLoadingTask: any = null;
+
     async function loadPDF() {
       setLoading(true);
+      onLoadingStateChange?.(key, true);
       setError(null);
       try {
-        const loadingTask = pdfjsLib.getDocument(url);
+        let pdfUrl = url;
+        if (file) {
+          objectUrl = URL.createObjectURL(file);
+          pdfUrl = objectUrl;
+          console.log(`[PDFRenderer] Created object URL for file: ${file.name}, URL: ${objectUrl}`);
+        }
+        if (!pdfUrl) {
+          if (!isCancelled) {
+            setLoading(false);
+            onLoadingStateChange?.(key, false);
+          }
+          return;
+        }
+
+        console.log(`[PDFRenderer] Loading PDF from URL: ${pdfUrl}`);
+        const loadingTask = pdfjsLib.getDocument(pdfUrl);
+        currentLoadingTask = loadingTask;
         const pdf = await loadingTask.promise;
+        
+        if (isCancelled) {
+          try {
+            loadingTask.destroy();
+          } catch (e) {}
+          return;
+        }
+
         const pageResults: { src: string; width: number; height: number }[] = [];
 
         for (let i = 1; i <= pdf.numPages; i++) {
+          if (isCancelled) {
+            try {
+              loadingTask.destroy();
+            } catch (e) {}
+            return;
+          }
+
           const page = await pdf.getPage(i);
           // Compute scale to fit within A4 content width
           const unscaledViewport = page.getViewport({ scale: 1 });
@@ -133,122 +174,161 @@ export default function PDFRenderer({
           }
         }
 
-        setPages(pageResults);
+        if (!isCancelled) {
+          setPages(pageResults);
+          console.log(`[PDFRenderer] Successfully loaded ${pdf.numPages} pages.`);
+          onLoadingStateChange?.(key, false);
+          setLoading(false);
+        }
       } catch (err: unknown) {
-        console.error("Error rendering PDF:", err);
-        setError(err instanceof Error ? err.message : String(err));
-      } finally {
-        setLoading(false);
+        if (!isCancelled) {
+          console.error("Error rendering PDF:", err);
+          setError(err instanceof Error ? err.message : String(err));
+          onLoadingStateChange?.(key, false);
+          setLoading(false);
+        }
       }
     }
 
-    if (url && (url.toLowerCase().endsWith('.pdf') || url.startsWith('blob:') || url.includes('blob'))) {
+    console.log(`[PDFRenderer] useEffect trigger for ${key}. url: ${url}, file: ${file?.name}`);
+    if ((url && (url.toLowerCase().endsWith('.pdf') || url.startsWith('blob:') || url.includes('blob'))) || file) {
       loadPDF();
+    } else {
+      setLoading(false);
     }
-  }, [url]);
+
+    return () => {
+      isCancelled = true;
+      console.log(`[PDFRenderer] useEffect cleanup for ${key}. objectUrl: ${objectUrl}`);
+      if (currentLoadingTask) {
+        try {
+          currentLoadingTask.destroy();
+        } catch (e) {}
+      }
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+      }
+      onLoadingStateChange?.(key, false);
+    };
+  }, [url, file]);
 
   if (loading) {
-    if (isPrint) return null;
     return <div style={{ padding: '1rem', color: '#64748b' }}>Rendering PDF pages for print...</div>;
   }
   if (error) {
-    if (isPrint) return null;
     return <div style={{ color: '#ef4444', padding: '1rem' }}>Error loading PDF: {error}</div>;
   }
 
-  return (
-    <div className={isPrint ? "pdf-print-container" : "pdf-render-container"}>
+  const portalId = `pdf-print-target-${itemIndex}-${fileIndex}`;
+  const portalTarget = typeof window !== "undefined" ? document.getElementById(portalId) : null;
+
+  const previewContent = (
+    <div className="pdf-render-container">
       {pages.map((page, pageIndex) => {
         const key = `proof_${itemIndex}_${fileIndex}_${pageIndex}`;
         const isExcluded = excludedPages.has(key);
 
-        if (isPrint) {
-          if (isExcluded) return null;
+        if (isExcluded) {
           return (
-            <div
-              key={pageIndex}
-              className="print-proof-item"
-            >
-              <div className="proof-header">
-                <h3>
-                  Proof for Item {itemIndex + 1}: {category} (PDF Page {pageIndex + 1} of {pages.length})
-                </h3>
-                <p>
-                  Reimbursement ID: {expenseId} | Amount: {symbol}{Number(amount).toFixed(2)}
-                </p>
+            <div key={pageIndex} className="excluded-page-placeholder no-print">
+              <div className="excluded-page-text">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+                <span>Proof {itemIndex + 1} (PDF Page {pageIndex + 1}) - Excluded from Print</span>
               </div>
-              <div className="proof-content">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={page.src}
-                  alt={`PDF Page ${pageIndex + 1}`}
-                  style={{
-                    width: page.width,
-                    height: page.height,
-                    maxWidth: '100%',
-                    display: 'block',
-                    margin: '0 auto',
-                    border: '1px solid #ddd',
-                  }}
-                />
-              </div>
-            </div>
-          );
-        } else {
-          // On-screen preview mode
-          if (isExcluded) {
-            return (
-              <div key={pageIndex} className="excluded-page-placeholder no-print">
-                <div className="excluded-page-text">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <line x1="18" y1="6" x2="6" y2="18" />
-                    <line x1="6" y1="6" x2="18" y2="18" />
-                  </svg>
-                  <span>Proof {itemIndex + 1} (PDF Page {pageIndex + 1}) - Excluded from Print</span>
-                </div>
-                <button
-                  type="button"
-                  className="page-restore-btn"
-                  onClick={() => onToggleExclude?.(key)}
-                >
-                  Restore Page
-                </button>
-              </div>
-            );
-          }
-
-          return (
-            <div key={pageIndex} className="preview-page-card no-print">
-              <div className="preview-page-header">
-                <span className="preview-page-title">
-                  Proof {itemIndex + 1}: {category} (PDF Page {pageIndex + 1} of {pages.length})
-                </span>
-                <button
-                  type="button"
-                  className="page-exclude-btn"
-                  onClick={() => onToggleExclude?.(key)}
-                >
-                  Exclude Page
-                </button>
-              </div>
-              <div style={{ padding: '1.5rem', backgroundColor: '#fff', display: 'flex', justifyContent: 'center' }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={page.src}
-                  alt={`PDF Page ${pageIndex + 1}`}
-                  style={{
-                    width: page.width,
-                    height: page.height,
-                    maxWidth: '100%',
-                    display: 'block',
-                    border: '1px solid #ddd',
-                  }}
-                />
-              </div>
+              <button
+                type="button"
+                className="page-restore-btn"
+                onClick={() => onToggleExclude?.(key)}
+              >
+                Restore Page
+              </button>
             </div>
           );
         }
+
+        return (
+          <div key={pageIndex} className="preview-page-card no-print">
+            <div className="preview-page-header">
+              <span className="preview-page-title">
+                Proof {itemIndex + 1}: {category} (PDF Page {pageIndex + 1} of {pages.length})
+              </span>
+              <button
+                type="button"
+                className="page-exclude-btn"
+                onClick={() => onToggleExclude?.(key)}
+              >
+                Exclude Page
+              </button>
+            </div>
+            <div style={{ padding: '1.5rem', backgroundColor: '#fff', display: 'flex', justifyContent: 'center' }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={page.src}
+                alt={`PDF Page ${pageIndex + 1}`}
+                style={{
+                  width: page.width,
+                  height: page.height,
+                  maxWidth: '100%',
+                  display: 'block',
+                  border: '1px solid #ddd',
+                }}
+              />
+            </div>
+          </div>
+        );
       })}
     </div>
+  );
+
+  const printContent = (
+    <div className="pdf-print-container">
+      {pages.map((page, pageIndex) => {
+        const key = `proof_${itemIndex}_${fileIndex}_${pageIndex}`;
+        const isExcluded = excludedPages.has(key);
+
+        if (isExcluded) return null;
+
+        return (
+          <div
+            key={pageIndex}
+            className="print-proof-item"
+          >
+            <div className="proof-header">
+              <h3>
+                Proof for Item {itemIndex + 1}: {category} (PDF Page {pageIndex + 1} of {pages.length})
+              </h3>
+              <p>
+                Reimbursement ID: {expenseId} | Amount: {symbol}{Number(amount).toFixed(2)}
+              </p>
+            </div>
+            <div className="proof-content">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={page.src}
+                alt={`PDF Page ${pageIndex + 1}`}
+                style={{
+                  width: page.width,
+                  height: page.height,
+                  maxWidth: '100%',
+                  display: 'block',
+                  margin: '0 auto',
+                  border: '1px solid #ddd',
+                }}
+              />
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+
+  return (
+    <>
+      {previewContent}
+      {portalTarget && createPortal(printContent, portalTarget)}
+    </>
   );
 }

@@ -53,9 +53,26 @@ export default function HRDashboard() {
   const [isEditingCounter, setIsEditingCounter] = useState(false);
   const [newCounter, setNewCounter] = useState<string>("");
   const [excludedPages, setExcludedPages] = useState<Set<string>>(new Set());
+  const [loadingPDFs, setLoadingPDFs] = useState<Record<string, boolean>>({});
+
+  const handlePDFLoadingStateChange = (key: string, isLoading: boolean) => {
+    setLoadingPDFs((prev) => {
+      if (prev[key] === isLoading) return prev;
+      const next = { ...prev };
+      if (isLoading) {
+        next[key] = true;
+      } else {
+        delete next[key];
+      }
+      return next;
+    });
+  };
+
+  const isAnyPDFLoading = Object.keys(loadingPDFs).length > 0;
 
   useEffect(() => {
     setExcludedPages(new Set());
+    setLoadingPDFs({});
   }, [selectedExpense]);
 
   const handleToggleExclude = (key: string) => {
@@ -856,7 +873,7 @@ export default function HRDashboard() {
                         expenseId={selectedExpense.id}
                         excludedPages={excludedPages}
                         onToggleExclude={handleToggleExclude}
-                        isPrint={false}
+                        onLoadingStateChange={handlePDFLoadingStateChange}
                       />
                     );
                   } else {
@@ -950,20 +967,27 @@ export default function HRDashboard() {
                   className="btn btn-primary"
                   onClick={handlePrint}
                   style={{ backgroundColor: "#10b981" }}
+                  disabled={isAnyPDFLoading}
                 >
-                  <svg
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
-                    <polyline points="6 9 6 2 18 2 18 9" />
-                    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
-                    <rect x="6" y="14" width="12" height="8" />
-                  </svg>
-                  Approve & Print Slip
+                  {isAnyPDFLoading ? (
+                    "Loading PDFs..."
+                  ) : (
+                    <>
+                      <svg
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      >
+                        <polyline points="6 9 6 2 18 2 18 9" />
+                        <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+                        <rect x="6" y="14" width="12" height="8" />
+                      </svg>
+                      Approve & Print Slip
+                    </>
+                  )}
                 </button>
               </div>
             </div>
@@ -1245,17 +1269,9 @@ export default function HRDashboard() {
               const isPDF = path.toLowerCase().endsWith('.pdf');
               if (isPDF) {
                 return (
-                  <PDFRenderer
-                    key={`pdf-print-${itemIdx}-${fileIdx}`}
-                    url={`/api/file?url=${encodeURIComponent(path)}`}
-                    itemIndex={itemIdx}
-                    fileIndex={fileIdx}
-                    category={item.category}
-                    amount={item.amount}
-                    symbol={symbol}
-                    expenseId={selectedExpense.id}
-                    excludedPages={excludedPages}
-                    isPrint={true}
+                  <div
+                    key={`pdf-print-target-${itemIdx}-${fileIdx}`}
+                    id={`pdf-print-target-${itemIdx}-${fileIdx}`}
                   />
                 );
               } else {

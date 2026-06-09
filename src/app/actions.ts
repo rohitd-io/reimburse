@@ -72,6 +72,12 @@ export async function submitExpense(formData: FormData) {
       if (!file) break;
       
       if (file.size > 0) {
+        const isPDF = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+        const isImage = file.type.startsWith('image/');
+        if (!isPDF && !isImage) {
+          throw new Error(`Unsupported file type: "${file.name}". Only images and PDFs are allowed.`);
+        }
+        
         // Use Vercel Blob storage to upload the file privately
         const blob = await put(`proofs/${newId}_${i}_${j}_${file.name}`, file, {
           access: 'private',

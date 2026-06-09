@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useCurrency } from "./CurrencyContext";
 import { submitExpense } from "./actions";
 import dynamic from "next/dynamic";
+import ProofImage from "./ProofImage";
 
 const PDFRenderer = dynamic(() => import("./PDFRenderer"), { ssr: false });
 
@@ -53,6 +54,23 @@ export default function SubmitExpense() {
   const [submittedExpense, setSubmittedExpense] = useState<Expense | null>(null);
   const [includeOfficeCopy, setIncludeOfficeCopy] = useState(false);
   const [excludedPages, setExcludedPages] = useState<Set<string>>(new Set());
+  const [loadingPDFs, setLoadingPDFs] = useState<Record<string, boolean>>({});
+  const [autoPrintTriggered, setAutoPrintTriggered] = useState(false);
+
+  const handlePDFLoadingStateChange = (key: string, isLoading: boolean) => {
+    setLoadingPDFs((prev) => {
+      if (prev[key] === isLoading) return prev;
+      const next = { ...prev };
+      if (isLoading) {
+        next[key] = true;
+      } else {
+        delete next[key];
+      }
+      return next;
+    });
+  };
+
+  const isAnyPDFLoading = Object.keys(loadingPDFs).length > 0;
 
   const handleAddItem = () => {
     setItems([...items, { category: "", amount: "", description: "", proofs: [] as File[], paymentMethod: "", referenceNo: "" }]);
@@ -150,20 +168,26 @@ export default function SubmitExpense() {
     setSubmittedExpense(null);
     setSubmitted(false);
     setExcludedPages(new Set());
+    setLoadingPDFs({});
+    setAutoPrintTriggered(false);
   };
 
   const handlePrint = () => {
+    if (isAnyPDFLoading) return;
     window.print();
   };
 
   useEffect(() => {
-    if (submittedExpense) {
-      const timer = setTimeout(() => {
-        window.print();
-      }, 500);
-      return () => clearTimeout(timer);
+    if (submittedExpense && !autoPrintTriggered) {
+      if (!isAnyPDFLoading) {
+        const timer = setTimeout(() => {
+          window.print();
+          setAutoPrintTriggered(true);
+        }, 500);
+        return () => clearTimeout(timer);
+      }
     }
-  }, [submittedExpense]);
+  }, [submittedExpense, isAnyPDFLoading, autoPrintTriggered]);
 
   if (submittedExpense) {
     return (
@@ -197,13 +221,24 @@ export default function SubmitExpense() {
               </label>
               
               <div style={{ marginLeft: 'auto', display: 'flex', gap: '1rem' }}>
-                <button onClick={handlePrint} className="btn btn-primary" style={{ backgroundColor: '#319795' }}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <polyline points="6 9 6 2 18 2 18 9" />
-                    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
-                    <rect x="6" y="14" width="12" height="8" />
-                  </svg>
-                  Print Voucher
+                <button 
+                  onClick={handlePrint} 
+                  className="btn btn-primary" 
+                  style={{ backgroundColor: '#319795' }}
+                  disabled={isAnyPDFLoading}
+                >
+                  {isAnyPDFLoading ? (
+                    "Loading PDFs..."
+                  ) : (
+                    <>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <polyline points="6 9 6 2 18 2 18 9" />
+                        <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+                        <rect x="6" y="14" width="12" height="8" />
+                      </svg>
+                      Print Voucher
+                    </>
+                  )}
                 </button>
                 <button onClick={handleReset} className="btn btn-secondary">
                   Fill New Request
@@ -431,13 +466,12 @@ export default function SubmitExpense() {
             if (files.length > 0) {
               return files.map((file, fileIdx) => {
                 const isPDF = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
-                const objectUrl = URL.createObjectURL(file);
                 
                 if (isPDF) {
                   return (
                     <PDFRenderer
                       key={`pdf-${itemIdx}-${fileIdx}`}
-                      url={objectUrl}
+                      file={file}
                       itemIndex={itemIdx}
                       fileIndex={fileIdx}
                       category={item.category}
@@ -446,7 +480,7 @@ export default function SubmitExpense() {
                       expenseId={submittedExpense.id}
                       excludedPages={excludedPages}
                       onToggleExclude={handleToggleExclude}
-                      isPrint={false}
+                      onLoadingStateChange={handlePDFLoadingStateChange}
                     />
                   );
                 } else {
@@ -476,8 +510,7 @@ export default function SubmitExpense() {
                         </button>
                       </div>
                       <div style={{ padding: '1.5rem', backgroundColor: '#fff', display: 'flex', justifyContent: 'center' }}>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={objectUrl} alt={`Proof ${itemIdx + 1}`} style={{ maxWidth: '100%', maxHeight: '400px', objectFit: 'contain', border: '1px solid #ddd' }} />
+                        <ProofImage file={file} alt={`Proof ${itemIdx + 1}`} style={{ maxWidth: '100%', maxHeight: '400px', objectFit: 'contain', border: '1px solid #ddd' }} />
                       </div>
                     </div>
                   );
@@ -500,7 +533,7 @@ export default function SubmitExpense() {
                       expenseId={submittedExpense.id}
                       excludedPages={excludedPages}
                       onToggleExclude={handleToggleExclude}
-                      isPrint={false}
+                      onLoadingStateChange={handlePDFLoadingStateChange}
                     />
                   );
                 } else {
@@ -531,8 +564,7 @@ export default function SubmitExpense() {
                         </button>
                       </div>
                       <div style={{ padding: '1.5rem', backgroundColor: '#fff', display: 'flex', justifyContent: 'center' }}>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={proofSrc} alt={`Proof ${itemIdx + 1}`} style={{ maxWidth: '100%', maxHeight: '400px', objectFit: 'contain', border: '1px solid #ddd' }} />
+                        <ProofImage src={proofSrc} alt={`Proof ${itemIdx + 1}`} style={{ maxWidth: '100%', maxHeight: '400px', objectFit: 'contain', border: '1px solid #ddd' }} />
                       </div>
                     </div>
                   );
@@ -724,21 +756,12 @@ export default function SubmitExpense() {
             if (files.length > 0) {
               return files.map((file, fileIdx) => {
                 const isPDF = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
-                const objectUrl = URL.createObjectURL(file);
                 
                 if (isPDF) {
                   return (
-                    <PDFRenderer
-                      key={`pdf-print-${itemIdx}-${fileIdx}`}
-                      url={objectUrl}
-                      itemIndex={itemIdx}
-                      fileIndex={fileIdx}
-                      category={item.category}
-                      amount={item.amount}
-                      symbol={symbol}
-                      expenseId={submittedExpense.id}
-                      excludedPages={excludedPages}
-                      isPrint={true}
+                    <div
+                      key={`pdf-print-target-${itemIdx}-${fileIdx}`}
+                      id={`pdf-print-target-${itemIdx}-${fileIdx}`}
                     />
                   );
                 } else {
@@ -754,9 +777,8 @@ export default function SubmitExpense() {
                         <p>Reimbursement ID: {submittedExpense.id} | Amount: {symbol}{Number(item.amount).toFixed(2)}</p>
                       </div>
                       <div className="proof-content">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={objectUrl}
+                        <ProofImage
+                          file={file}
                           alt={`Proof ${itemIdx + 1}`}
                           style={{
                             maxWidth: "100%",
@@ -778,17 +800,9 @@ export default function SubmitExpense() {
                 
                 if (isPDF) {
                   return (
-                    <PDFRenderer
-                      key={`pdf-print-path-${itemIdx}-${fileIdx}`}
-                      url={`/api/file?url=${encodeURIComponent(path)}`}
-                      itemIndex={itemIdx}
-                      fileIndex={fileIdx}
-                      category={item.category}
-                      amount={item.amount}
-                      symbol={symbol}
-                      expenseId={submittedExpense.id}
-                      excludedPages={excludedPages}
-                      isPrint={true}
+                    <div
+                      key={`pdf-print-target-${itemIdx}-${fileIdx}`}
+                      id={`pdf-print-target-${itemIdx}-${fileIdx}`}
                     />
                   );
                 } else {
@@ -805,8 +819,7 @@ export default function SubmitExpense() {
                         <p>Reimbursement ID: {submittedExpense.id} | Amount: {symbol}{Number(item.amount).toFixed(2)}</p>
                       </div>
                       <div className="proof-content">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
+                        <ProofImage
                           src={proofSrc}
                           alt={`Proof ${itemIdx + 1}`}
                           style={{
@@ -946,6 +959,12 @@ export default function SubmitExpense() {
                           const files = Array.from(e.target.files || []);
                           const validFiles: File[] = [];
                           for (const file of files) {
+                            const isPDF = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+                            const isImage = file.type.startsWith('image/');
+                            if (!isPDF && !isImage) {
+                              alert(`Unsupported file type: "${file.name}". Only images and PDF files are allowed.`);
+                              continue;
+                            }
                             if (file.size > 10 * 1024 * 1024) {
                               alert(`File "${file.name}" exceeds 10MB limit.`);
                             } else {
