@@ -94,6 +94,7 @@ export default function PDFRenderer({
   const [pages, setPages] = useState<{ src: string; width: number; height: number }[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
 
   useEffect(() => {
     const key = `pdf-${itemIndex}-${fileIndex}`;
@@ -212,15 +213,39 @@ export default function PDFRenderer({
     };
   }, [url, file]);
 
+  useEffect(() => {
+    if (loading) return;
+
+    const portalId = `pdf-print-target-${itemIndex}-${fileIndex}`;
+    
+    const checkTarget = () => {
+      const target = document.getElementById(portalId);
+      if (target) {
+        setPortalTarget(target);
+        return true;
+      }
+      return false;
+    };
+
+    if (checkTarget()) return;
+
+    let count = 0;
+    const interval = setInterval(() => {
+      count++;
+      if (checkTarget() || count >= 10) {
+        clearInterval(interval);
+      }
+    }, 100);
+
+    return () => clearInterval(interval);
+  }, [itemIndex, fileIndex, loading]);
+
   if (loading) {
     return <div style={{ padding: '1rem', color: '#64748b' }}>Rendering PDF pages for print...</div>;
   }
   if (error) {
     return <div style={{ color: '#ef4444', padding: '1rem' }}>Error loading PDF: {error}</div>;
   }
-
-  const portalId = `pdf-print-target-${itemIndex}-${fileIndex}`;
-  const portalTarget = typeof window !== "undefined" ? document.getElementById(portalId) : null;
 
   const previewContent = (
     <div className="pdf-render-container">
