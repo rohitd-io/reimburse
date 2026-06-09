@@ -64,27 +64,35 @@ export async function submitExpense(formData: FormData) {
 
   for (let i = 0; i < itemsMetadata.length; i++) {
     const item = itemsMetadata[i];
-    const file = formData.get(`proof_${i}`) as File;
-    let proofPath = "";
+    const proofPaths: string[] = [];
     
-    if (file && file.size > 0) {
-      // Use Vercel Blob storage to upload the file privately
-      const blob = await put(`proofs/${newId}_${i}_${file.name}`, file, {
-        access: 'private',
-      });
-      proofPath = blob.url;
+    let j = 0;
+    while (true) {
+      const file = formData.get(`proof_${i}_${j}`) as File;
+      if (!file) break;
+      
+      if (file.size > 0) {
+        // Use Vercel Blob storage to upload the file privately
+        const blob = await put(`proofs/${newId}_${i}_${j}_${file.name}`, file, {
+          access: 'private',
+        });
+        proofPaths.push(blob.url);
+      }
+      j++;
     }
+    
+    const proofPathValue = proofPaths.length > 0 ? JSON.stringify(proofPaths) : "";
     
     await db.execute({
       sql: 'INSERT INTO expense_items (expense_id, category, amount, description, proof_path, payment_method, reference_no) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      args: [String(newId), item.category, item.amount, item.description, proofPath, item.paymentMethod || null, item.referenceNo || null]
+      args: [String(newId), item.category, item.amount, item.description, proofPathValue, item.paymentMethod || null, item.referenceNo || null]
     });
 
     itemsWithProof.push({
       category: item.category,
       amount: item.amount,
       description: item.description,
-      proof_path: proofPath || undefined,
+      proof_path: proofPathValue || undefined,
       payment_method: item.paymentMethod || undefined,
       reference_no: item.referenceNo || undefined
     });
