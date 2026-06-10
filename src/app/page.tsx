@@ -42,14 +42,14 @@ function getProofPaths(proofPathVal?: string): string[] {
 }
 
 export default function SubmitExpense() {
-  const { symbol } = useCurrency();
+  const { currency, symbol, setCurrency } = useCurrency();
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [name, setName] = useState("");
-  const [department, setDepartment] = useState("");
+  const [department, setDepartment] = useState("Engineering / Software Development");
   const [honeypot, setHoneypot] = useState("");
   const [items, setItems] = useState([
-    { category: "", amount: "", description: "", proofs: [] as File[], paymentMethod: "", referenceNo: "" }
+    { category: "Travel & Transit", amount: "", description: "", proofs: [] as File[], paymentMethod: "UPI", referenceNo: "", otherReason: "" }
   ]);
   const [submittedExpense, setSubmittedExpense] = useState<Expense | null>(null);
   const [includeOfficeCopy, setIncludeOfficeCopy] = useState(false);
@@ -73,7 +73,7 @@ export default function SubmitExpense() {
   const isAnyPDFLoading = Object.keys(loadingPDFs).length > 0;
 
   const handleAddItem = () => {
-    setItems([...items, { category: "", amount: "", description: "", proofs: [] as File[], paymentMethod: "", referenceNo: "" }]);
+    setItems([...items, { category: "Travel & Transit", amount: "", description: "", proofs: [] as File[], paymentMethod: "UPI", referenceNo: "", otherReason: "" }]);
   };
 
   const handleRemoveItem = (index: number) => {
@@ -127,7 +127,7 @@ export default function SubmitExpense() {
           });
         }
         return {
-          category: item.category,
+          category: item.category === "Other" && item.otherReason ? `Other (${item.otherReason})` : item.category,
           amount: parseFloat(item.amount),
           description: item.description,
           paymentMethod: item.paymentMethod,
@@ -163,8 +163,8 @@ export default function SubmitExpense() {
 
   const handleReset = () => {
     setName("");
-    setDepartment("");
-    setItems([{ category: "", amount: "", description: "", proofs: [] as File[], paymentMethod: "", referenceNo: "" }]);
+    setDepartment("Engineering / Software Development");
+    setItems([{ category: "Travel & Transit", amount: "", description: "", proofs: [] as File[], paymentMethod: "UPI", referenceNo: "", otherReason: "" }]);
     setSubmittedExpense(null);
     setSubmitted(false);
     setExcludedPages(new Set());
@@ -888,12 +888,24 @@ export default function SubmitExpense() {
               <div>
                 <label className="form-label">Department <span style={{ color: 'var(--danger, #ef4444)' }}>*</span></label>
                 <select required className="form-select" value={department} onChange={(e) => setDepartment(e.target.value)}>
-                  <option value="">Select Department</option>
-                  <option value="Engineering">Engineering</option>
+                  <option value="Engineering / Software Development">Engineering / Software Development</option>
+                  <option value="Product Management">Product Management</option>
+                  <option value="DevOps / Infrastructure">DevOps / Infrastructure</option>
+                  <option value="IT Support">IT Support</option>
+                  <option value="Design / UX">Design / UX</option>
                   <option value="Sales">Sales</option>
                   <option value="Marketing">Marketing</option>
+                  <option value="Customer Support">Customer Support</option>
+                  <option value="Human Resources (HR)">Human Resources (HR)</option>
+                  <option value="Finance & Accounting">Finance & Accounting</option>
+                  <option value="Legal & Compliance">Legal & Compliance</option>
                   <option value="Operations">Operations</option>
+                  <option value="Procurement / Vendor Management">Procurement / Vendor Management</option>
+                  <option value="Executive Management">Executive Management</option>
                 </select>
+                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                  Default is Engineering. Change to your department from the dropdown if needed.
+                </p>
               </div>
             </div>
 
@@ -920,39 +932,93 @@ export default function SubmitExpense() {
                   <div className="form-grid" style={{ marginBottom: '1rem' }}>
                     <div>
                       <label className="form-label">Expense Category <span style={{ color: 'var(--danger, #ef4444)' }}>*</span></label>
-                      <select required className="form-select" value={item.category} onChange={(e) => handleItemChange(index, 'category', e.target.value)}>
-                        <option value="">Select Category</option>
+                      <select required className="form-select" value={item.category || "Travel & Transit"} onChange={(e) => handleItemChange(index, 'category', e.target.value)}>
                         <option value="Travel & Transit">Travel & Transit</option>
+                        <option value="Accommodation & Hotels">Accommodation & Hotels</option>
                         <option value="Meals & Entertainment">Meals & Entertainment</option>
                         <option value="Office Supplies">Office Supplies</option>
                         <option value="Software Subscriptions">Software Subscriptions</option>
+                        <option value="Cloud Services">Cloud Services</option>
+                        <option value="Internet & Mobile Bills">Internet & Mobile Bills</option>
+                        <option value="Hardware & Equipment">Hardware & Equipment</option>
+                        <option value="Training & Certifications">Training & Certifications</option>
+                        <option value="Books & Learning Materials">Books & Learning Materials</option>
+                        <option value="Conference & Event Fees">Conference & Event Fees</option>
+                        <option value="Client Meetings">Client Meetings</option>
+                        <option value="Marketing & Advertising">Marketing & Advertising</option>
+                        <option value="Recruitment Expenses">Recruitment Expenses</option>
+                        <option value="Professional Services">Professional Services</option>
+                        <option value="Legal & Compliance Fees">Legal & Compliance Fees</option>
+                        <option value="Health & Wellness">Health & Wellness</option>
+                        <option value="Remote Work Expenses">Remote Work Expenses</option>
+                        <option value="Vehicle & Fuel Expenses">Vehicle & Fuel Expenses</option>
+                        <option value="Parking & Tolls">Parking & Tolls</option>
+                        <option value="Utilities">Utilities</option>
+                        <option value="Team Building Activities">Team Building Activities</option>
+                        <option value="Employee Benefits">Employee Benefits</option>
+                        <option value="Vendor Payments">Vendor Payments</option>
+                        <option value="Project Expenses">Project Expenses</option>
+                        <option value="Miscellaneous">Miscellaneous</option>
                         <option value="Other">Other</option>
                       </select>
+                      <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                        Default is Travel & Transit. Change to another category from the dropdown if needed.
+                      </p>
+                      {item.category === "Other" && (
+                        <div style={{ marginTop: '0.5rem' }}>
+                          <input 
+                            required 
+                            type="text" 
+                            className="form-input" 
+                            placeholder="Specify other reason..." 
+                            value={item.otherReason || ""} 
+                            onChange={(e) => handleItemChange(index, 'otherReason', e.target.value)} 
+                          />
+                        </div>
+                      )}
                     </div>
                     <div>
-                      <label className="form-label">Amount ({symbol}) <span style={{ color: 'var(--danger, #ef4444)' }}>*</span></label>
-                      <input required type="number" step="0.01" min="0" className="form-input" placeholder="0.00" value={item.amount} onChange={(e) => handleItemChange(index, 'amount', e.target.value)} />
+                      <label className="form-label">Description / Business Purpose <span style={{ color: 'var(--danger, #ef4444)' }}>*</span></label>
+                      <textarea required className="form-textarea" rows={1} placeholder="Explain the purpose..." value={item.description} onChange={(e) => handleItemChange(index, 'description', e.target.value)} style={{ resize: 'vertical', minHeight: '38px' }}></textarea>
                     </div>
                   </div>
+
                   <div className="form-grid" style={{ marginBottom: '1rem' }}>
                     <div>
-                      <label className="form-label">Payment Method</label>
-                      <select className="form-select" value={item.paymentMethod || ""} onChange={(e) => handleItemChange(index, 'paymentMethod', e.target.value)}>
-                        <option value="">Select Method (Optional)</option>
+                      <label className="form-label">Payment Method <span style={{ color: 'var(--danger, #ef4444)' }}>*</span></label>
+                      <select required className="form-select" value={item.paymentMethod || "UPI"} onChange={(e) => handleItemChange(index, 'paymentMethod', e.target.value)}>
                         <option value="UPI">UPI</option>
                         <option value="Card">Card</option>
                         <option value="Bank Transfer">Bank Transfer</option>
+                        <option value="Cash">Cash</option>
                       </select>
+                      <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                        Default is UPI. Choose another option from the dropdown if needed.
+                      </p>
                     </div>
+                    <div>
+                      <label className="form-label">Amount <span style={{ color: 'var(--danger, #ef4444)' }}>*</span></label>
+                      <div className="input-group">
+                        <select 
+                          className="input-group-select" 
+                          value={currency} 
+                          onChange={(e) => setCurrency(e.target.value as 'INR' | 'USD')}
+                        >
+                          <option value="INR">INR (₹)</option>
+                          <option value="USD">USD ($)</option>
+                        </select>
+                        <input required type="number" step="0.01" min="0" className="form-input input-group-input" placeholder="0.00" value={item.amount} onChange={(e) => handleItemChange(index, 'amount', e.target.value)} />
+                      </div>
+                      <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                        Default is INR. Change currency from the dropdown if needed.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="form-grid" style={{ marginBottom: '1rem' }}>
                     <div>
                       <label className="form-label">Reference Number</label>
                       <input type="text" className="form-input" placeholder="Transaction ID, Cheque No..." value={item.referenceNo || ""} onChange={(e) => handleItemChange(index, 'referenceNo', e.target.value)} />
-                    </div>
-                  </div>
-                  <div className="form-grid-2-1" style={{ marginBottom: '1rem' }}>
-                    <div>
-                      <label className="form-label">Description / Business Purpose <span style={{ color: 'var(--danger, #ef4444)' }}>*</span></label>
-                      <textarea required className="form-textarea" rows={1} placeholder="Explain the purpose..." value={item.description} onChange={(e) => handleItemChange(index, 'description', e.target.value)}></textarea>
                     </div>
                     <div>
                       <label className="form-label">Proof Document(s) (Image/PDF) (Optional)</label>
@@ -1015,14 +1081,17 @@ export default function SubmitExpense() {
             </div>
 
             <div className="review-footer-flex form-actions-footer" style={{ marginTop: '2rem' }}>
-              <button type="button" className="btn btn-secondary">Cancel</button>
+              <button type="button" className="btn btn-secondary" onClick={handleReset}>Cancel</button>
+              <button type="button" onClick={handleAddItem} className="btn btn-secondary" style={{ marginRight: 'auto' }}>
+                + Add New Item
+              </button>
               <button type="submit" className="btn btn-primary" disabled={submitting}>
                 {submitting ? (
-                  "Submitting..."
+                  "Saving..."
                 ) : (
                   <>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                    Submit for Approval
+                    Save & Submit for Approval
                   </>
                 )}
               </button>

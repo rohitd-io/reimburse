@@ -10,3 +10,4 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - Always run `npm run lint` and `npm run typecheck` to verify your changes.
 - Always fix all reported lint errors and TypeScript compilation errors.
 - Follow the instructions in the [fix-lint-and-typescript.md](file:///home/vaibhav/Documents/emertech_workspace/reimburse/skills/fix-lint-and-typescript.md) skill file for troubleshooting and resolving common issues.
+- Ensure all pages and elements are always fully mobile-friendly and responsive by following the instructions in the [mobile-friendly.md](file:///home/vaibhav/Documents/emertech_workspace/reimburse/skills/mobile-friendly.md) skill file.
