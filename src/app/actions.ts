@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { put } from "@vercel/blob";
 
 export async function getExpenses() {
-  const result = await db.execute('SELECT * FROM expenses ORDER BY date DESC');
+  const result = await db.execute('SELECT * FROM expenses ORDER BY date DESC, id DESC');
   const expenses = result.rows;
   
   const results = await Promise.all(expenses.map(async (exp) => {
@@ -30,7 +30,7 @@ export async function submitExpense(formData: FormData) {
   const department = formData.get('department') as string;
   const itemJSON = formData.get('items') as string;
   const itemsMetadata = JSON.parse(itemJSON);
-  const date = new Date().toISOString().split('T')[0];
+  const date = new Date().toISOString();
   
   const settingsResult = await db.execute({
     sql: 'SELECT value FROM settings WHERE key = ?',

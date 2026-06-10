@@ -41,6 +41,11 @@ function getProofPaths(proofPathVal?: string): string[] {
   }
 }
 
+function formatDateOnly(dateStr?: string): string {
+  if (!dateStr) return "";
+  return dateStr.split("T")[0];
+}
+
 export default function SubmitExpense() {
   const { currency, symbol, setCurrency } = useCurrency();
   const [submitted, setSubmitted] = useState(false);
@@ -313,7 +318,7 @@ export default function SubmitExpense() {
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
                       <div style={{ borderBottom: '1px solid #cbd5e0', paddingBottom: '0.25rem' }}>
                         <span style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, color: '#1e3a8a', textTransform: 'uppercase' }}>Date</span>
-                        <span style={{ fontSize: '0.9rem' }}>{submittedExpense.date}</span>
+                        <span style={{ fontSize: '0.9rem' }}>{formatDateOnly(submittedExpense.date)}</span>
                       </div>
                       <div style={{ borderBottom: '1px solid #cbd5e0', paddingBottom: '0.25rem' }}>
                         <span style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, color: '#1e3a8a', textTransform: 'uppercase' }}>Amount</span>
@@ -419,7 +424,7 @@ export default function SubmitExpense() {
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
                         <div style={{ borderBottom: '1px solid #cbd5e0', paddingBottom: '0.25rem' }}>
                           <span style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, color: '#1e3a8a', textTransform: 'uppercase' }}>Date</span>
-                          <span style={{ fontSize: '0.9rem' }}>{submittedExpense.date}</span>
+                          <span style={{ fontSize: '0.9rem' }}>{formatDateOnly(submittedExpense.date)}</span>
                         </div>
                         <div style={{ borderBottom: '1px solid #cbd5e0', paddingBottom: '0.25rem' }}>
                           <span style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, color: '#1e3a8a', textTransform: 'uppercase' }}>Amount</span>
@@ -636,7 +641,7 @@ export default function SubmitExpense() {
               <div className="voucher-details-grid">
                 <div className="detail-item">
                   <span className="detail-label">Date</span>
-                  <div className="detail-value">{submittedExpense.date}</div>
+                  <div className="detail-value">{formatDateOnly(submittedExpense.date)}</div>
                 </div>
                 <div className="detail-item">
                   <span className="detail-label">Amount</span>
@@ -734,7 +739,7 @@ export default function SubmitExpense() {
               <div className="voucher-details-grid">
                 <div className="detail-item">
                   <span className="detail-label">Date</span>
-                  <div className="detail-value">{submittedExpense.date}</div>
+                  <div className="detail-value">{formatDateOnly(submittedExpense.date)}</div>
                 </div>
                 <div className="detail-item">
                   <span className="detail-label">Amount</span>

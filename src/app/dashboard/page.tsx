@@ -40,6 +40,75 @@ function getProofPaths(proofPathVal?: string): string[] {
   }
 }
 
+function formatDateOnly(dateStr?: string): string {
+  if (!dateStr) return "";
+  return dateStr.split("T")[0];
+}
+
+function formatRelativeTime(dateStr?: string): string {
+  if (!dateStr) return "—";
+  
+  // If dateStr is just YYYY-MM-DD (legacy entries), return as is
+  if (dateStr.length === 10 && !dateStr.includes('T')) {
+    return dateStr;
+  }
+  
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return dateStr;
+  
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / (60 * 1000));
+  
+  // Format time (e.g., "08:15 AM")
+  const formatTime = (d: Date) => {
+    let hours = d.getHours();
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    hours = hours ? hours : 12;
+    return `${hours}:${minutes} ${ampm}`;
+  };
+
+  // Format full date with time (e.g., "10 Jun 2026, 08:15 AM")
+  const formatFullDateTime = (d: Date) => {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const day = d.getDate();
+    const month = months[d.getMonth()];
+    const year = d.getFullYear();
+    return `${day} ${month} ${year}, ${formatTime(d)}`;
+  };
+  
+  // Check if today
+  const isToday = (d: Date) => {
+    const today = new Date();
+    return d.getDate() === today.getDate() &&
+      d.getMonth() === today.getMonth() &&
+      d.getFullYear() === today.getFullYear();
+  };
+
+  // Check if yesterday
+  const isYesterday = (d: Date) => {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    return d.getDate() === yesterday.getDate() &&
+      d.getMonth() === yesterday.getMonth() &&
+      d.getFullYear() === yesterday.getFullYear();
+  };
+  
+  if (diffMins < 1) {
+    return "just now";
+  } else if (diffMins < 60) {
+    return `${diffMins} min${diffMins > 1 ? 's' : ''} ago`;
+  } else if (isToday(date)) {
+    return `Today at ${formatTime(date)}`;
+  } else if (isYesterday(date)) {
+    return `Yesterday at ${formatTime(date)}`;
+  } else {
+    return formatFullDateTime(date);
+  }
+}
+
 export default function HRDashboard() {
   const { symbol } = useCurrency();
   const [expenses, setExpenses] = useState<Expense[]>([]);
@@ -351,7 +420,7 @@ export default function HRDashboard() {
             </button>
           </div>
         </div>
-        <div className="table-wrapper">
+        <div className="table-wrapper dashboard-list-wrapper">
           <table>
             <thead>
               <tr>
@@ -402,7 +471,7 @@ export default function HRDashboard() {
                         <td style={{ fontWeight: 500 }}>
                           {exp.receipt_no || exp.id}
                         </td>
-                        <td>{exp.date}</td>
+                        <td>{formatRelativeTime(exp.date)}</td>
                         <td>
                           <div style={{ fontWeight: 500 }}>{exp.name}</div>
                           <div
@@ -437,7 +506,14 @@ export default function HRDashboard() {
                               padding: "0.25rem 0.75rem",
                               fontSize: "0.75rem",
                             }}
-                            onClick={() => setSelectedExpense(exp)}
+                            onClick={() => {
+                              setSelectedExpense(exp);
+                              setTimeout(() => {
+                                document
+                                  .getElementById("review-details-section")
+                                  ?.scrollIntoView({ behavior: "smooth" });
+                              }, 100);
+                            }}
                           >
                             Review
                           </button>
@@ -453,6 +529,7 @@ export default function HRDashboard() {
 
       {selectedExpense && (
         <div
+          id="review-details-section"
           className="card no-print"
           style={{ border: "2px solid var(--primary)" }}
         >
@@ -495,7 +572,7 @@ export default function HRDashboard() {
                     <strong>Department:</strong> {selectedExpense.department}
                   </div>
                   <div>
-                    <strong>Date:</strong> {selectedExpense.date}
+                    <strong>Date:</strong> {formatRelativeTime(selectedExpense.date)}
                   </div>
                 </div>
 
@@ -727,7 +804,7 @@ export default function HRDashboard() {
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
                           <div style={{ borderBottom: '1px solid #cbd5e0', paddingBottom: '0.25rem' }}>
                             <span style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, color: '#1e3a8a', textTransform: 'uppercase' }}>Date</span>
-                            <span style={{ fontSize: '0.9rem' }}>{selectedExpense.date}</span>
+                            <span style={{ fontSize: '0.9rem' }}>{formatDateOnly(selectedExpense.date)}</span>
                           </div>
                           <div style={{ borderBottom: '1px solid #cbd5e0', paddingBottom: '0.25rem' }}>
                             <span style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, color: '#1e3a8a', textTransform: 'uppercase' }}>Amount</span>
@@ -833,7 +910,7 @@ export default function HRDashboard() {
                           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
                             <div style={{ borderBottom: '1px solid #cbd5e0', paddingBottom: '0.25rem' }}>
                               <span style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, color: '#1e3a8a', textTransform: 'uppercase' }}>Date</span>
-                              <span style={{ fontSize: '0.9rem' }}>{selectedExpense.date}</span>
+                              <span style={{ fontSize: '0.9rem' }}>{formatDateOnly(selectedExpense.date)}</span>
                             </div>
                             <div style={{ borderBottom: '1px solid #cbd5e0', paddingBottom: '0.25rem' }}>
                               <span style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, color: '#1e3a8a', textTransform: 'uppercase' }}>Amount</span>
@@ -1086,7 +1163,7 @@ export default function HRDashboard() {
               <div className="voucher-details-grid">
                 <div className="detail-item">
                   <span className="detail-label">Date</span>
-                  <div className="detail-value">{selectedExpense.date}</div>
+                  <div className="detail-value">{formatDateOnly(selectedExpense.date)}</div>
                 </div>
                 <div className="detail-item">
                   <span className="detail-label">Amount</span>
@@ -1217,7 +1294,7 @@ export default function HRDashboard() {
               <div className="voucher-details-grid">
                 <div className="detail-item">
                   <span className="detail-label">Date</span>
-                  <div className="detail-value">{selectedExpense.date}</div>
+                  <div className="detail-value">{formatDateOnly(selectedExpense.date)}</div>
                 </div>
                 <div className="detail-item">
                   <span className="detail-label">Amount</span>
