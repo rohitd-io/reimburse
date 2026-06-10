@@ -761,6 +761,35 @@ export default function HRDashboard() {
               </div>
             </div>
 
+            {/* Render PDFRenderers in background so they are ready for print even if preview is hidden */}
+            <div className="no-print">
+              {selectedExpense.items.map((item, itemIdx) => {
+                const paths = getProofPaths(item.proof_path);
+                return paths.map((path, fileIdx) => {
+                  const isPDF = path.toLowerCase().endsWith('.pdf');
+                  if (isPDF) {
+                    return (
+                      <PDFRenderer
+                        key={`pdf-${itemIdx}-${fileIdx}`}
+                        url={`/api/file?url=${encodeURIComponent(path)}`}
+                        itemIndex={itemIdx}
+                        fileIndex={fileIdx}
+                        category={item.category}
+                        amount={item.amount}
+                        symbol={symbol}
+                        expenseId={selectedExpense.id}
+                        excludedPages={excludedPages}
+                        onToggleExclude={handleToggleExclude}
+                        onLoadingStateChange={handlePDFLoadingStateChange}
+                        showPreview={showPrintPreview}
+                      />
+                    );
+                  }
+                  return null;
+                });
+              })}
+            </div>
+
             {showPrintPreview && (
               <div style={{ marginTop: '2.5rem', paddingTop: '2rem', borderTop: '1px solid var(--border)' }}>
                 <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--text-main)' }}>Print Preview & Page Exclusions</h3>
@@ -979,61 +1008,45 @@ export default function HRDashboard() {
                 )
               )}
 
-              {/* Proof Pages (Screen Preview) */}
+              {/* Proof Pages (Screen Preview - Images only since PDFs are rendered in background above) */}
               {selectedExpense.items.map((item, itemIdx) => {
                 const paths = getProofPaths(item.proof_path);
                 return paths.map((path, fileIdx) => {
                   const isPDF = path.toLowerCase().endsWith('.pdf');
-                  if (isPDF) {
+                  if (isPDF) return null;
+
+                  const key = `proof_${itemIdx}_${fileIdx}_0`;
+                  const isExcluded = excludedPages.has(key);
+                  const proofSrc = `/api/file?url=${encodeURIComponent(path)}`;
+                  if (isExcluded) {
                     return (
-                      <PDFRenderer
-                        key={`pdf-${itemIdx}-${fileIdx}`}
-                        url={`/api/file?url=${encodeURIComponent(path)}`}
-                        itemIndex={itemIdx}
-                        fileIndex={fileIdx}
-                        category={item.category}
-                        amount={item.amount}
-                        symbol={symbol}
-                        expenseId={selectedExpense.id}
-                        excludedPages={excludedPages}
-                        onToggleExclude={handleToggleExclude}
-                        onLoadingStateChange={handlePDFLoadingStateChange}
-                      />
-                    );
-                  } else {
-                    const key = `proof_${itemIdx}_${fileIdx}_0`;
-                    const isExcluded = excludedPages.has(key);
-                    const proofSrc = `/api/file?url=${encodeURIComponent(path)}`;
-                    if (isExcluded) {
-                      return (
-                        <div key={key} className="excluded-page-placeholder">
-                          <div className="excluded-page-text">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                            </svg>
-                            <span>Proof {itemIdx + 1} (Image File {fileIdx + 1}) - Excluded from Print</span>
-                          </div>
-                          <button type="button" className="page-restore-btn" onClick={() => handleToggleExclude(key)}>
-                            Restore Page
-                          </button>
+                      <div key={key} className="excluded-page-placeholder">
+                        <div className="excluded-page-text">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                          </svg>
+                          <span>Proof {itemIdx + 1} (Image File {fileIdx + 1}) - Excluded from Print</span>
                         </div>
-                      );
-                    }
-                    return (
-                      <div key={key} className="preview-page-card">
-                        <div className="preview-page-header">
-                          <span className="preview-page-title">Proof {itemIdx + 1}: {item.category} (Image File {fileIdx + 1})</span>
-                          <button type="button" className="page-exclude-btn" onClick={() => handleToggleExclude(key)}>
-                            Exclude Page
-                          </button>
-                        </div>
-                        <div style={{ padding: '0.75rem', backgroundColor: '#fff', display: 'flex', justifyContent: 'center' }}>
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={proofSrc} alt={`Proof ${itemIdx + 1}`} style={{ maxWidth: '100%', maxHeight: '220px', objectFit: 'contain', border: '1px solid #ddd' }} />
-                        </div>
+                        <button type="button" className="page-restore-btn" onClick={() => handleToggleExclude(key)}>
+                          Restore Page
+                        </button>
                       </div>
                     );
                   }
+                  return (
+                    <div key={key} className="preview-page-card">
+                      <div className="preview-page-header">
+                        <span className="preview-page-title">Proof {itemIdx + 1}: {item.category} (Image File {fileIdx + 1})</span>
+                        <button type="button" className="page-exclude-btn" onClick={() => handleToggleExclude(key)}>
+                          Exclude Page
+                        </button>
+                      </div>
+                      <div style={{ padding: '0.75rem', backgroundColor: '#fff', display: 'flex', justifyContent: 'center' }}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={proofSrc} alt={`Proof ${itemIdx + 1}`} style={{ maxWidth: '100%', maxHeight: '220px', objectFit: 'contain', border: '1px solid #ddd' }} />
+                      </div>
+                    </div>
+                  );
                 });
               })}
               </div>

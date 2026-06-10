@@ -78,6 +78,7 @@ interface PDFRendererProps {
   excludedPages: Set<string>;
   onToggleExclude?: (key: string) => void;
   onLoadingStateChange?: (key: string, isLoading: boolean) => void;
+  showPreview?: boolean;
 }
 
 export default function PDFRenderer({
@@ -92,6 +93,7 @@ export default function PDFRenderer({
   excludedPages,
   onToggleExclude,
   onLoadingStateChange,
+  showPreview = true,
 }: PDFRendererProps) {
   const [pages, setPages] = useState<{ src: string; width: number; height: number }[]>([]);
   const [loading, setLoading] = useState(true);
@@ -358,7 +360,7 @@ export default function PDFRenderer({
 
   return (
     <>
-      {previewContent}
+      {showPreview && previewContent}
       {portalTarget && createPortal(printContent, portalTarget)}
     </>
   );
