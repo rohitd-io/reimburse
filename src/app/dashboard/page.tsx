@@ -131,6 +131,7 @@ export default function HRDashboard() {
   const [newCounter, setNewCounter] = useState<string>("");
   const [excludedPages, setExcludedPages] = useState<Set<string>>(new Set());
   const [loadingPDFs, setLoadingPDFs] = useState<Record<string, boolean>>({});
+  const [showPrintPreview, setShowPrintPreview] = useState(false);
 
   const handlePDFLoadingStateChange = useCallback((key: string, isLoading: boolean) => {
     setLoadingPDFs((prev) => {
@@ -508,6 +509,7 @@ export default function HRDashboard() {
                             }}
                             onClick={() => {
                               setSelectedExpense(exp);
+                              setShowPrintPreview(false);
                               setTimeout(() => {
                                 document
                                   .getElementById("review-details-section")
@@ -545,7 +547,10 @@ export default function HRDashboard() {
             <h2 className="card-title">Review Details: {selectedExpense.id}</h2>
             <button
               className="btn btn-secondary"
-              onClick={() => setSelectedExpense(null)}
+              onClick={() => {
+                setSelectedExpense(null);
+                setShowPrintPreview(false);
+              }}
               style={{ padding: "0.25rem 0.5rem" }}
             >
               <svg
@@ -756,8 +761,9 @@ export default function HRDashboard() {
               </div>
             </div>
 
-            <div style={{ marginTop: '2.5rem', paddingTop: '2rem', borderTop: '1px solid var(--border)' }}>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--text-main)' }}>Print Preview & Page Exclusions</h3>
+            {showPrintPreview && (
+              <div style={{ marginTop: '2.5rem', paddingTop: '2rem', borderTop: '1px solid var(--border)' }}>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--text-main)' }}>Print Preview & Page Exclusions</h3>
               <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
                 Click <strong>Exclude Page</strong> to skip printing specific payment slips, individual receipts, or particular pages of a PDF.
               </p>
@@ -1030,7 +1036,8 @@ export default function HRDashboard() {
                   }
                 });
               })}
-            </div>
+              </div>
+            )}
 
             <div className="review-footer-flex">
               <label
@@ -1052,6 +1059,17 @@ export default function HRDashboard() {
                 Include Office Copy (Duplicate)
               </label>
               <div style={{ display: "flex", gap: "1rem" }}>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setShowPrintPreview(!showPrintPreview)}
+                  style={{
+                    backgroundColor: "#f1f5f9",
+                    border: "1px solid var(--border)",
+                  }}
+                >
+                  {showPrintPreview ? "Hide Print Preview" : "Customize Printed Pages (Exclude Pages)"}
+                </button>
                 {selectedExpense.status === "Pending" && (
                   <>
                     <button

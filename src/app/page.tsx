@@ -61,6 +61,7 @@ export default function SubmitExpense() {
   const [excludedPages, setExcludedPages] = useState<Set<string>>(new Set());
   const [loadingPDFs, setLoadingPDFs] = useState<Record<string, boolean>>({});
   const [autoPrintTriggered, setAutoPrintTriggered] = useState(false);
+  const [showPrintPreview, setShowPrintPreview] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
 
   useEffect(() => {
@@ -188,6 +189,7 @@ export default function SubmitExpense() {
     setExcludedPages(new Set());
     setLoadingPDFs({});
     setAutoPrintTriggered(false);
+    setShowPrintPreview(false);
   };
 
   const handlePrint = () => {
@@ -270,10 +272,26 @@ export default function SubmitExpense() {
                 </button>
               </div>
             </div>
+            
+            <div style={{ display: 'flex', justifyContent: 'flex-start', marginTop: '0.75rem', borderTop: '1px dashed #cbd5e0', paddingTop: '0.75rem' }}>
+              <button 
+                type="button" 
+                className="btn btn-secondary" 
+                style={{ fontSize: '0.8rem', padding: '0.35rem 0.75rem', gap: '0.35rem', color: '#4a5568' }}
+                onClick={() => setShowPrintPreview(!showPrintPreview)}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                  <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4Z" />
+                </svg>
+                {showPrintPreview ? "Hide Print Preview & Exclusions" : "Want to exclude some pages? Click to customize print"}
+              </button>
+            </div>
           </div>
         </div>
 
-        <div style={{ maxWidth: '850px', margin: '0 auto 3rem auto' }} className="no-print">
+        {showPrintPreview && (
+          <div style={{ maxWidth: '850px', margin: '0 auto 3rem auto' }} className="no-print">
           <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '1.5rem', color: 'var(--text-main)' }}>Print Preview & Page Exclusions</h2>
           
           {/* Original Copy Preview Card */}
@@ -602,7 +620,8 @@ export default function SubmitExpense() {
             }
             return null;
           })}
-        </div>
+          </div>
+        )}
 
         {/* Hidden Print Container */}
         <div className="print-container">
