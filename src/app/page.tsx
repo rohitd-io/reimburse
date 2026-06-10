@@ -651,6 +651,10 @@ export default function SubmitExpense() {
                   <span className="detail-label">From</span>
                   <div className="detail-value">{submittedExpense.name}</div>
                 </div>
+                <div className="detail-item">
+                  <span className="detail-label">Department</span>
+                  <div className="detail-value">{submittedExpense.department}</div>
+                </div>
                 <div className="detail-item payment-for-row">
                   <span className="detail-label">Payment For</span>
                   <div className="detail-value">
@@ -748,6 +752,10 @@ export default function SubmitExpense() {
                 <div className="detail-item">
                   <span className="detail-label">From</span>
                   <div className="detail-value">{submittedExpense.name}</div>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Department</span>
+                  <div className="detail-value">{submittedExpense.department}</div>
                 </div>
                 <div className="detail-item payment-for-row">
                   <span className="detail-label">Payment For</span>
