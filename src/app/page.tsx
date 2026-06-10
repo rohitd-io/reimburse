@@ -2,7 +2,7 @@
 import "./polyfill";
 import { useState, useEffect } from "react";
 import { useCurrency } from "./CurrencyContext";
-import { submitExpense } from "./actions";
+import { submitExpense, getEmployeeSuggestions } from "./actions";
 import dynamic from "next/dynamic";
 import ProofImage from "./ProofImage";
 
@@ -56,6 +56,19 @@ export default function SubmitExpense() {
   const [excludedPages, setExcludedPages] = useState<Set<string>>(new Set());
   const [loadingPDFs, setLoadingPDFs] = useState<Record<string, boolean>>({});
   const [autoPrintTriggered, setAutoPrintTriggered] = useState(false);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+
+  useEffect(() => {
+    const fetchSuggestions = async () => {
+      try {
+        const list = await getEmployeeSuggestions();
+        setSuggestions(list);
+      } catch (err) {
+        console.error("Failed to load employee suggestions:", err);
+      }
+    };
+    fetchSuggestions();
+  }, []);
 
   const handlePDFLoadingStateChange = (key: string, isLoading: boolean) => {
     setLoadingPDFs((prev) => {
@@ -883,7 +896,34 @@ export default function SubmitExpense() {
             <div className="form-grid" style={{ marginBottom: '2rem' }}>
               <div>
                 <label className="form-label">Employee Name <span style={{ color: 'var(--danger, #ef4444)' }}>*</span></label>
-                <input required type="text" className="form-input" placeholder="John Doe" value={name} onChange={(e) => setName(e.target.value)} />
+                <input 
+                  required 
+                  type="text" 
+                  className="form-input" 
+                  placeholder="John Doe" 
+                  value={name} 
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setName(val);
+                    if (val.length > name.length && val.trim().length >= 2) {
+                      const search = val.toLowerCase();
+                      let matches = suggestions.filter(s => s.toLowerCase().startsWith(search));
+                      if (matches.length === 0) {
+                        matches = suggestions.filter(s => s.toLowerCase().includes(search));
+                      }
+                      if (matches.length === 1) {
+                        setName(matches[0]);
+                      }
+                    }
+                  }} 
+                  list="employee-names"
+                  autoComplete="off"
+                />
+                <datalist id="employee-names">
+                  {suggestions.map((suggestion, idx) => (
+                    <option key={idx} value={suggestion} />
+                  ))}
+                </datalist>
               </div>
               <div>
                 <label className="form-label">Department <span style={{ color: 'var(--danger, #ef4444)' }}>*</span></label>

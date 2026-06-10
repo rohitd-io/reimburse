@@ -161,3 +161,83 @@ export async function updateReceiptCounter(newCount: number) {
   revalidatePath('/dashboard');
   return { success: true };
 }
+
+export async function getEmployeeSuggestions(): Promise<string[]> {
+  const now = Date.now();
+  const oneDay = 24 * 60 * 60 * 1000;
+  
+  interface TeamMemberAttribute {
+    name?: string;
+    designation?: string;
+    rank?: number;
+  }
+
+  interface TeamMember {
+    id: number;
+    attributes: TeamMemberAttribute;
+  }
+
+  interface APIResponse {
+    data?: TeamMember[];
+  }
+
+  try {
+    const cacheResult = await db.execute({
+      sql: 'SELECT value FROM settings WHERE key = ?',
+      args: ['employee_names_cache']
+    });
+    
+    const cacheTimeResult = await db.execute({
+      sql: 'SELECT value FROM settings WHERE key = ?',
+      args: ['employee_names_cache_time']
+    });
+    
+    const cachedValue = cacheResult.rows[0]?.value as string | undefined;
+    const cachedTime = cacheTimeResult.rows[0]?.value ? parseInt(cacheTimeResult.rows[0].value as string) : 0;
+    
+    if (cachedValue && (now - cachedTime < oneDay)) {
+      try {
+        return JSON.parse(cachedValue) as string[];
+      } catch {
+        // Parse error, ignore and fetch fresh
+      }
+    }
+    
+    console.log("Fetching fresh team names from CMS API...");
+    const response = await fetch('https://cms.emertech.io/api/teams?populate=*&sort=rank:ASC', {
+      next: { revalidate: 86400 } // Fetch cache daily in Next.js fetch cache
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch from API: ${response.statusText}`);
+    }
+    
+    const json = (await response.json()) as APIResponse;
+    const names: string[] = (json.data || [])
+      .map((item) => item.attributes?.name?.trim())
+      .filter((name): name is string => typeof name === "string" && name.length > 0);
+      
+    await db.execute({
+      sql: 'INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)',
+      args: ['employee_names_cache', JSON.stringify(names)]
+    });
+    
+    await db.execute({
+      sql: 'INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)',
+      args: ['employee_names_cache_time', String(now)]
+    });
+    
+    return names;
+  } catch (err) {
+    console.error("Error fetching or caching employee names:", err);
+    try {
+      const cacheResult = await db.execute({
+        sql: 'SELECT value FROM settings WHERE key = ?',
+        args: ['employee_names_cache']
+      });
+      const cachedValue = cacheResult.rows[0]?.value as string | undefined;
+      if (cachedValue) return JSON.parse(cachedValue) as string[];
+    } catch {}
+    return [];
+  }
+}
