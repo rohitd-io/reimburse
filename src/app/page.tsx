@@ -64,17 +64,35 @@ export default function SubmitExpense() {
   const [showPrintPreview, setShowPrintPreview] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
 
+  // CAPTCHA Challenge States
+  const [num1, setNum1] = useState(0);
+  const [num2, setNum2] = useState(0);
+  const [captchaAnswer, setCaptchaAnswer] = useState("");
+  const [captchaError, setCaptchaError] = useState("");
+
+  const generateCaptcha = useCallback(() => {
+    setNum1(Math.floor(Math.random() * 9) + 1);
+    setNum2(Math.floor(Math.random() * 9) + 1);
+    setCaptchaAnswer("");
+    setCaptchaError("");
+  }, []);
+
   useEffect(() => {
     const fetchSuggestions = async () => {
       try {
         const list = await getEmployeeSuggestions();
         setSuggestions(list);
       } catch (err) {
-        console.error("Failed to load employee suggestions:", err);
+        console.error("Error loading suggestions:", err);
       }
     };
     fetchSuggestions();
-  }, []);
+    
+    // Generate CAPTCHA challenge
+    Promise.resolve().then(() => {
+      generateCaptcha();
+    });
+  }, [generateCaptcha]);
 
   const handlePDFLoadingStateChange = useCallback((key: string, isLoading: boolean) => {
     setLoadingPDFs((prev) => {
@@ -131,13 +149,25 @@ export default function SubmitExpense() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setCaptchaError("");
     setSubmitting(true);
+
+    // Validate captcha
+    if (parseInt(captchaAnswer) !== num1 + num2) {
+      setCaptchaError("Incorrect captcha answer. Please try again.");
+      generateCaptcha();
+      setSubmitting(false);
+      return;
+    }
     
     try {
       const formData = new FormData();
       formData.append('name', name);
       formData.append('department', department);
       formData.append('honeypot', honeypot);
+      formData.append('num1', String(num1));
+      formData.append('num2', String(num2));
+      formData.append('captchaAnswer', captchaAnswer);
       
       const itemsMetadata = items.map((item, index) => {
         if (item.proofs && item.proofs.length > 0) {
@@ -171,10 +201,11 @@ export default function SubmitExpense() {
         });
         setSubmitted(true);
       } else {
-        alert("Failed to submit expense report.");
+        setCaptchaError(result.error || "Failed to submit expense report.");
+        generateCaptcha();
       }
     } catch {
-      alert("Failed to submit expense report.");
+      setCaptchaError("Failed to submit expense report. Please check your network and try again.");
     } finally {
       setSubmitting(false);
     }
@@ -190,6 +221,7 @@ export default function SubmitExpense() {
     setLoadingPDFs({});
     setAutoPrintTriggered(false);
     setShowPrintPreview(false);
+    generateCaptcha();
   };
 
   const handlePrint = () => {
@@ -1179,6 +1211,60 @@ export default function SubmitExpense() {
                   </div>
                 </div>
               ))}
+            </div>
+
+            {/* CAPTCHA Spam Protection */}
+            <div style={{ 
+              backgroundColor: '#f8fafc', 
+              padding: '1.25rem', 
+              borderRadius: '0.5rem', 
+              border: '1px solid var(--border)', 
+              marginBottom: '1.5rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.5rem'
+            }}>
+              <label className="form-label" style={{ fontWeight: 600, color: 'var(--text-main)' }}>
+                Spam Verification <span style={{ color: 'var(--danger, #ef4444)' }}>*</span>
+              </label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+                <span style={{ 
+                  backgroundColor: '#e2e8f0', 
+                  padding: '0.5rem 1rem', 
+                  borderRadius: '0.375rem', 
+                  fontWeight: 700, 
+                  fontSize: '1rem',
+                  letterSpacing: '0.05em',
+                  userSelect: 'none'
+                }}>
+                  {num1} + {num2} = ?
+                </span>
+                <input 
+                  required
+                  type="number" 
+                  className="form-input" 
+                  placeholder="Answer..." 
+                  value={captchaAnswer}
+                  onChange={(e) => setCaptchaAnswer(e.target.value)}
+                  style={{ maxWidth: '120px' }}
+                />
+                <button 
+                  type="button" 
+                  className="btn btn-secondary" 
+                  onClick={generateCaptcha}
+                  style={{ padding: '0.5rem 0.75rem', fontSize: '0.8rem' }}
+                  title="Generate new question"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+                  </svg>
+                </button>
+              </div>
+              {captchaError && (
+                <p style={{ color: 'var(--danger, #ef4444)', fontSize: '0.8rem', margin: 0, fontWeight: 500 }}>
+                  {captchaError}
+                </p>
+              )}
             </div>
 
             <div className="review-footer-flex form-actions-footer" style={{ marginTop: '2rem' }}>

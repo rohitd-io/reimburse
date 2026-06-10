@@ -3,6 +3,11 @@
 import db from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import { put } from "@vercel/blob";
+import { headers } from "next/headers";
+
+// Simple in-memory rate limiting cache
+// Key: IP address, Value: Array of timestamps of submissions in the last minute
+const rateLimitMap = new Map<string, number[]>();
 
 export async function getExpenses() {
   const result = await db.execute('SELECT * FROM expenses ORDER BY date DESC, id DESC');
@@ -25,6 +30,42 @@ export async function submitExpense(formData: FormData) {
     // Honeypot field was filled out, likely a bot. Silently ignore.
     return { success: true, id: null };
   }
+
+  // Server-side CAPTCHA verification
+  const num1 = formData.get('num1') as string;
+  const num2 = formData.get('num2') as string;
+  const captchaAnswer = formData.get('captchaAnswer') as string;
+
+  if (!num1 || !num2 || !captchaAnswer) {
+    return { success: false, error: "Verification parameters are missing. Please solve the CAPTCHA." };
+  }
+
+  if (parseInt(captchaAnswer) !== parseInt(num1) + parseInt(num2)) {
+    return { success: false, error: "Spam verification failed. Please try again." };
+  }
+
+  // IP-based Rate Limiting (Cooldown check: max 3 requests per minute per IP)
+  const headerList = await headers();
+  const ip = headerList.get("x-forwarded-for")?.split(",")[0].trim() || "127.0.0.1";
+  
+  const now = Date.now();
+  const windowMs = 60 * 1000;
+  const maxRequests = 3;
+  
+  const clientSubmissions = rateLimitMap.get(ip) || [];
+  const recentSubmissions = clientSubmissions.filter(time => now - time < windowMs);
+  
+  if (recentSubmissions.length >= maxRequests) {
+    const oldestRecent = recentSubmissions[0];
+    const secondsLeft = Math.ceil((windowMs - (now - oldestRecent)) / 1000);
+    return { 
+      success: false, 
+      error: `Too many submissions. Please wait ${secondsLeft} seconds and try again.` 
+    };
+  }
+  
+  recentSubmissions.push(now);
+  rateLimitMap.set(ip, recentSubmissions);
 
   const name = formData.get('name') as string;
   const department = formData.get('department') as string;
