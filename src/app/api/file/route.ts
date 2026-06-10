@@ -3,7 +3,7 @@ import { get } from "@vercel/blob";
 
 export async function GET(request: NextRequest) {
   const url = request.nextUrl.searchParams.get("url");
-  const isAuthenticated = request.cookies.has("auth_token");
+  const isAuthenticated = request.cookies.has("emertech_reimburse_session");
 
   if (!isAuthenticated) {
     return new NextResponse("Unauthorized", { status: 401 });

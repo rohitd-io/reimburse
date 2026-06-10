@@ -3,6 +3,7 @@ import "../polyfill";
 import { useState, useEffect } from "react";
 import { useCurrency } from "../CurrencyContext";
 import { getExpenses, updateExpenseStatus, getReceiptCounter, updateReceiptCounter } from "../actions";
+import { logout } from "../actions/auth";
 import dynamic from "next/dynamic";
 
 const PDFRenderer = dynamic(() => import("../PDFRenderer"), { ssr: false });
@@ -42,6 +43,13 @@ function getProofPaths(proofPathVal?: string): string[] {
 export default function HRDashboard() {
   const { symbol } = useCurrency();
   const [expenses, setExpenses] = useState<Expense[]>([]);
+
+  const handleLogout = async () => {
+    if (window.confirm("Are you sure you want to log out?")) {
+      await logout();
+      window.location.href = "/login";
+    }
+  };
   const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
   const [includeOfficeCopy, setIncludeOfficeCopy] = useState(false);
   const [statusFilter, setStatusFilter] = useState<
@@ -165,8 +173,35 @@ export default function HRDashboard() {
         className="header no-print header-flex"
       >
         <div>
-          <h1>Reimburse Dashboard</h1>
-          <p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+            <h1 style={{ margin: 0 }}>Reimburse Dashboard</h1>
+            <button 
+              onClick={handleLogout}
+              className="btn btn-secondary"
+              style={{
+                padding: '0.35rem 0.75rem',
+                fontSize: '0.75rem',
+                color: 'var(--danger, #ef4444)',
+                borderColor: 'rgba(239, 68, 68, 0.2)',
+                backgroundColor: 'rgba(239, 68, 68, 0.05)',
+                fontWeight: 600,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.25rem',
+                cursor: 'pointer',
+                borderRadius: '0.375rem',
+                transition: 'all 0.2s'
+              }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                <polyline points="16 17 21 12 16 7" />
+                <line x1="21" y1="12" x2="9" y2="12" />
+              </svg>
+              Logout
+            </button>
+          </div>
+          <p style={{ marginTop: '0.25rem' }}>
             Review pending expense reports and generate printable reimbursement
             slips.
           </p>
