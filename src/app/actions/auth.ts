@@ -14,15 +14,31 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-export async function requestOtp(email: string) {
+export async function requestOtp(email: string, honeypot?: string) {
+  if (honeypot) {
+    // Silently ignore bots
+    return { success: true };
+  }
+
   // Check if admin exists
   const result = await db.execute({
-    sql: 'SELECT id FROM admins WHERE email = ?',
+    sql: 'SELECT id, otp_expires_at FROM admins WHERE email = ?',
     args: [email.toLowerCase()]
   });
 
   if (result.rows.length === 0) {
     return { success: false, error: "Email is not authorized as an admin." };
+  }
+
+  // Cooldown rate-limit check (60 seconds)
+  const lastExpiry = result.rows[0].otp_expires_at as number | null;
+  if (lastExpiry) {
+    const timeSinceLastRequest = lastExpiry - 10 * 60 * 1000;
+    const timeElapsed = Date.now() - timeSinceLastRequest;
+    if (timeElapsed > 0 && timeElapsed < 60 * 1000) {
+      const secondsLeft = Math.ceil((60 * 1000 - timeElapsed) / 1000);
+      return { success: false, error: `Please wait ${secondsLeft} seconds before requesting a new OTP.` };
+    }
   }
 
   // Generate 6 digit OTP
@@ -51,7 +67,12 @@ export async function requestOtp(email: string) {
   }
 }
 
-export async function verifyOtp(email: string, otp: string) {
+export async function verifyOtp(email: string, otp: string, honeypot?: string) {
+  if (honeypot) {
+    // Silently ignore bots
+    return { success: true };
+  }
+
   const result = await db.execute({
     sql: 'SELECT * FROM admins WHERE email = ? AND otp = ?',
     args: [email.toLowerCase(), otp]
