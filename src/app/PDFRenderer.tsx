@@ -51,8 +51,10 @@ function trimCanvasWhitespace(canvas: HTMLCanvasElement): HTMLCanvasElement | nu
 
   if (lastContentRow === -1) return null; // Page is completely blank
 
-  // Add a small bottom margin (8px) after the last content row
-  const croppedHeight = Math.min(lastContentRow + 8, height);
+  // Add a small bottom margin (8px scaled to the canvas resolution) after the last content row
+  const scaleFactor = canvas.width / A4_CONTENT_WIDTH_PX;
+  const margin = Math.round(8 * scaleFactor);
+  const croppedHeight = Math.min(lastContentRow + margin, height);
   if (croppedHeight >= height) return canvas; // nothing to trim
 
   const trimmed = document.createElement("canvas");
@@ -62,6 +64,48 @@ function trimCanvasWhitespace(canvas: HTMLCanvasElement): HTMLCanvasElement | nu
   if (!trimCtx) return canvas;
   trimCtx.drawImage(canvas, 0, 0, width, croppedHeight, 0, 0, width, croppedHeight);
   return trimmed;
+}
+
+/**
+ * Converts a canvas to grayscale and boosts contrast.
+ * This makes the document black-and-white and keeps text extremely sharp and readable.
+ */
+function convertCanvasToGrayscaleAndContrast(canvas: HTMLCanvasElement): HTMLCanvasElement {
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return canvas;
+
+  const { width, height } = canvas;
+  const imageData = ctx.getImageData(0, 0, width, height);
+  const data = imageData.data; // RGBA flat array
+
+  // Contrast enhancement factor
+  // factor = (259 * (contrast + 255)) / (255 * (259 - contrast))
+  // A contrast boost of 50 cleans up backgrounds and makes text stand out.
+  const contrast = 50;
+  const factor = (259 * (contrast + 255)) / (255 * (259 - contrast));
+
+  for (let i = 0; i < data.length; i += 4) {
+    const r = data[i];
+    const g = data[i + 1];
+    const b = data[i + 2];
+
+    // Grayscale conversion using BT.601 luminance weights
+    const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+
+    // Apply contrast
+    const adjustedGray = factor * (gray - 128) + 128;
+
+    // Clamp between 0 and 255
+    const finalGray = Math.max(0, Math.min(255, adjustedGray));
+
+    data[i] = finalGray;     // R
+    data[i + 1] = finalGray; // G
+    data[i + 2] = finalGray; // B
+    // data[i + 3] (alpha) remains unchanged
+  }
+
+  ctx.putImageData(imageData, 0, 0);
+  return canvas;
 }
 
 import { createPortal } from "react-dom";
@@ -156,25 +200,38 @@ export default function PDFRenderer({
           const scale = Math.min(scaleByWidth, scaleByHeight);
 
           const viewport = page.getViewport({ scale });
+
+          // Render at 3x scale for high resolution printing (gives crisp print output)
+          const RENDER_SCALE_FACTOR = 3;
+          const renderScale = scale * RENDER_SCALE_FACTOR;
+          const renderViewport = page.getViewport({ scale: renderScale });
+          
           const canvas = document.createElement("canvas");
           const context = canvas.getContext("2d");
 
           if (!context) throw new Error("Could not get canvas context");
 
-          canvas.height = viewport.height;
-          canvas.width = viewport.width;
+          canvas.width = renderViewport.width;
+          canvas.height = renderViewport.height;
 
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          await (page.render({ canvasContext: context, viewport } as any)).promise;
+          await (page.render({ canvasContext: context, viewport: renderViewport } as any)).promise;
+
+          // Convert canvas to grayscale and boost contrast for clear black & white text
+          convertCanvasToGrayscaleAndContrast(canvas);
 
           // Trim trailing whitespace from the rendered page
           const trimmed = trimCanvasWhitespace(canvas);
 
           if (trimmed) {
+            // Calculate proportional dimensions for layout
+            const layoutWidth = viewport.width;
+            const layoutHeight = (trimmed.height / renderViewport.height) * viewport.height;
+
             pageResults.push({
-              src: trimmed.toDataURL("image/jpeg", 0.85),
-              width: trimmed.width,
-              height: trimmed.height,
+              src: trimmed.toDataURL("image/png"), // Lossless PNG for crisp text
+              width: layoutWidth,
+              height: layoutHeight,
             });
           }
         }
@@ -343,8 +400,8 @@ export default function PDFRenderer({
                 src={page.src}
                 alt={`PDF Page ${pageIndex + 1}`}
                 style={{
-                  width: page.width,
-                  height: page.height,
+                  width: `${page.width}px`,
+                  height: `${page.height}px`,
                   maxWidth: '100%',
                   display: 'block',
                   margin: '0 auto',
