@@ -1,6 +1,5 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { requestOtp, verifyOtp } from "../actions/auth";
 
 export default function Login() {
@@ -15,8 +14,6 @@ export default function Login() {
   const [num1, setNum1] = useState(0);
   const [num2, setNum2] = useState(0);
   const [captchaAnswer, setCaptchaAnswer] = useState("");
-
-  const router = useRouter();
 
   const generateCaptcha = () => {
     setNum1(Math.floor(Math.random() * 9) + 1);

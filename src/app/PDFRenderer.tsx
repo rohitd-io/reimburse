@@ -3,8 +3,9 @@ import "./polyfill";
 import { useEffect, useState } from "react";
 import * as pdfjsLib from "pdfjs-dist";
 
-if (typeof window !== "undefined" && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.mjs";
+if (typeof window !== "undefined") {
+  // Use unpkg CDN for PDF worker to avoid Next.js dev server mime-type or path configuration issues (404s)
+  pdfjsLib.GlobalWorkerOptions.workerSrc = "https://unpkg.com/pdfjs-dist@5.7.284/build/pdf.worker.min.mjs";
 }
 
 // A4 at 96dpi: 210mm = ~794px, minus 2×1cm margin = 190mm = ~718px
@@ -291,17 +292,19 @@ export default function PDFRenderer({
                 Exclude Page
               </button>
             </div>
-            <div style={{ padding: '1.5rem', backgroundColor: '#fff', display: 'flex', justifyContent: 'center' }}>
+            <div style={{ padding: '0.75rem', backgroundColor: '#fff', display: 'flex', justifyContent: 'center', maxHeight: '250px', overflowY: 'auto' }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={page.src}
                 alt={`PDF Page ${pageIndex + 1}`}
                 style={{
-                  width: page.width,
-                  height: page.height,
                   maxWidth: '100%',
+                  maxHeight: '220px',
+                  width: 'auto',
+                  height: 'auto',
                   display: 'block',
                   border: '1px solid #ddd',
+                  objectFit: 'contain'
                 }}
               />
             </div>

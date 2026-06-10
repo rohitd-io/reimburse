@@ -1,6 +1,6 @@
 "use client";
 import "./polyfill";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useCurrency } from "./CurrencyContext";
 import { submitExpense, getEmployeeSuggestions } from "./actions";
 import dynamic from "next/dynamic";
@@ -70,7 +70,7 @@ export default function SubmitExpense() {
     fetchSuggestions();
   }, []);
 
-  const handlePDFLoadingStateChange = (key: string, isLoading: boolean) => {
+  const handlePDFLoadingStateChange = useCallback((key: string, isLoading: boolean) => {
     setLoadingPDFs((prev) => {
       if (prev[key] === isLoading) return prev;
       const next = { ...prev };
@@ -81,7 +81,7 @@ export default function SubmitExpense() {
       }
       return next;
     });
-  };
+  }, []);
 
   const isAnyPDFLoading = Object.keys(loadingPDFs).length > 0;
 
@@ -292,7 +292,7 @@ export default function SubmitExpense() {
                   Exclude Page
                 </button>
               </div>
-              <div className="card-body" style={{ padding: '2rem', backgroundColor: '#fff', color: '#1a1a1a', fontFamily: "'Inter', sans-serif" }}>
+              <div className="card-body" style={{ padding: '1rem', backgroundColor: '#fff', color: '#1a1a1a', fontFamily: "'Inter', sans-serif" }}>
                 <div className="voucher-preview-scroll">
                   <div className="voucher-preview-container">
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '2px solid #e2e8f0', paddingBottom: '1.5rem', marginBottom: '1.5rem' }}>
@@ -347,7 +347,9 @@ export default function SubmitExpense() {
                             <td style={{ fontSize: '0.75rem', padding: '0.5rem' }}>{idx + 1}</td>
                             <td style={{ fontSize: '0.75rem', padding: '0.5rem' }}>{item.payment_method || "—"}</td>
                             <td style={{ fontSize: '0.75rem', padding: '0.5rem' }}>{item.reference_no || "—"}</td>
-                            <td style={{ fontSize: '0.75rem', padding: '0.5rem' }}>{item.description}</td>
+                            <td style={{ fontSize: '0.75rem', padding: '0.5rem' }}>
+                              {item.description && item.description.trim() ? `${item.description.trim()} (${item.category})` : item.category}
+                            </td>
                             <td style={{ fontSize: '0.75rem', padding: '0.5rem', textAlign: 'right', fontWeight: 600 }}>{symbol}{Number(item.amount).toFixed(2)}</td>
                           </tr>
                         ))}
@@ -395,7 +397,7 @@ export default function SubmitExpense() {
                     Exclude Page
                   </button>
                 </div>
-                <div className="card-body" style={{ padding: '2rem', backgroundColor: '#fff', color: '#1a1a1a', fontFamily: "'Inter', sans-serif" }}>
+                <div className="card-body" style={{ padding: '1rem', backgroundColor: '#fff', color: '#1a1a1a', fontFamily: "'Inter', sans-serif" }}>
                   <div className="voucher-preview-scroll">
                     <div className="voucher-preview-container" style={{ border: '1px dashed #718096', position: 'relative' }}>
                       <div style={{ position: 'absolute', top: '-10px', left: '20px', backgroundColor: '#fff', padding: '0 0.5rem', fontSize: '0.7rem', fontWeight: 700, color: '#718096' }}>OFFICE COPY (DUPLICATE)</div>
@@ -451,7 +453,9 @@ export default function SubmitExpense() {
                               <td style={{ fontSize: '0.75rem', padding: '0.5rem' }}>{idx + 1}</td>
                               <td style={{ fontSize: '0.75rem', padding: '0.5rem' }}>{item.payment_method || "—"}</td>
                               <td style={{ fontSize: '0.75rem', padding: '0.5rem' }}>{item.reference_no || "—"}</td>
-                              <td style={{ fontSize: '0.75rem', padding: '0.5rem' }}>{item.description}</td>
+                              <td style={{ fontSize: '0.75rem', padding: '0.5rem' }}>
+                                {item.description && item.description.trim() ? `${item.description.trim()} (${item.category})` : item.category}
+                              </td>
                               <td style={{ fontSize: '0.75rem', padding: '0.5rem', textAlign: 'right', fontWeight: 600 }}>{symbol}{Number(item.amount).toFixed(2)}</td>
                             </tr>
                           ))}
@@ -529,8 +533,8 @@ export default function SubmitExpense() {
                           Exclude Page
                         </button>
                       </div>
-                      <div style={{ padding: '1.5rem', backgroundColor: '#fff', display: 'flex', justifyContent: 'center' }}>
-                        <ProofImage file={file} alt={`Proof ${itemIdx + 1}`} style={{ maxWidth: '100%', maxHeight: '400px', objectFit: 'contain', border: '1px solid #ddd' }} />
+                      <div style={{ padding: '0.75rem', backgroundColor: '#fff', display: 'flex', justifyContent: 'center' }}>
+                        <ProofImage file={file} alt={`Proof ${itemIdx + 1}`} style={{ maxWidth: '100%', maxHeight: '220px', objectFit: 'contain', border: '1px solid #ddd' }} />
                       </div>
                     </div>
                   );
@@ -583,8 +587,8 @@ export default function SubmitExpense() {
                           Exclude Page
                         </button>
                       </div>
-                      <div style={{ padding: '1.5rem', backgroundColor: '#fff', display: 'flex', justifyContent: 'center' }}>
-                        <ProofImage src={proofSrc} alt={`Proof ${itemIdx + 1}`} style={{ maxWidth: '100%', maxHeight: '400px', objectFit: 'contain', border: '1px solid #ddd' }} />
+                      <div style={{ padding: '0.75rem', backgroundColor: '#fff', display: 'flex', justifyContent: 'center' }}>
+                        <ProofImage src={proofSrc} alt={`Proof ${itemIdx + 1}`} style={{ maxWidth: '100%', maxHeight: '220px', objectFit: 'contain', border: '1px solid #ddd' }} />
                       </div>
                     </div>
                   );
@@ -599,7 +603,21 @@ export default function SubmitExpense() {
         <div className="print-container">
           {/* ORIGINAL COPY */}
           {!excludedPages.has("original") && (
-            <div className="print-slip" style={submittedExpense.items.length > 5 ? { breakInside: 'auto', pageBreakInside: 'auto' } : {}}>
+            <div 
+              className="print-slip" 
+              style={{
+                minHeight: (includeOfficeCopy && !excludedPages.has("original") && !excludedPages.has("duplicate") && submittedExpense.items.length <= 3) 
+                  ? '13.8cm' 
+                  : '27.7cm',
+                pageBreakAfter: (includeOfficeCopy && !excludedPages.has("original") && !excludedPages.has("duplicate") && submittedExpense.items.length <= 3)
+                  ? 'avoid'
+                  : 'always',
+                breakAfter: (includeOfficeCopy && !excludedPages.has("original") && !excludedPages.has("duplicate") && submittedExpense.items.length <= 3)
+                  ? 'avoid'
+                  : 'page',
+                ...(submittedExpense.items.length > 5 ? { breakInside: 'auto', pageBreakInside: 'auto' } : {})
+              }}
+            >
               <div className="voucher-header">
                 <div className="company-info">
                   <img src="/Emertech.png" alt="Emertech Logo" style={{ width: 'auto', height: '85px', marginBottom: '0.75rem' }} />
@@ -652,7 +670,9 @@ export default function SubmitExpense() {
                       <td>{idx + 1}</td>
                       <td>{item.payment_method || "—"}</td>
                       <td>{item.reference_no || "—"}</td>
-                      <td>{item.description}</td>
+                      <td>
+                        {item.description && item.description.trim() ? `${item.description.trim()} (${item.category})` : item.category}
+                      </td>
                       <td style={{ textAlign: "right" }}>{Number(item.amount).toFixed(2)}</td>
                     </tr>
                   ))}
@@ -683,11 +703,18 @@ export default function SubmitExpense() {
           {includeOfficeCopy && !excludedPages.has("duplicate") && (
             <div 
               className={`print-slip ${submittedExpense.items.length <= 3 ? "duplicate-slip" : ""}`}
-              style={
-                submittedExpense.items.length > 3 
-                  ? { pageBreakBefore: 'always', breakBefore: 'page', ...(submittedExpense.items.length > 5 && { breakInside: 'auto', pageBreakInside: 'auto' }) }
-                  : {}
-              }
+              style={{
+                minHeight: (includeOfficeCopy && !excludedPages.has("original") && !excludedPages.has("duplicate") && submittedExpense.items.length <= 3) 
+                  ? '13.8cm' 
+                  : '27.7cm',
+                pageBreakBefore: (includeOfficeCopy && !excludedPages.has("original") && !excludedPages.has("duplicate") && submittedExpense.items.length <= 3)
+                  ? 'avoid'
+                  : 'always',
+                breakBefore: (includeOfficeCopy && !excludedPages.has("original") && !excludedPages.has("duplicate") && submittedExpense.items.length <= 3)
+                  ? 'avoid'
+                  : 'page',
+                ...(submittedExpense.items.length > 5 ? { breakInside: 'auto', pageBreakInside: 'auto' } : {})
+              }}
             >
               <div className="voucher-header">
                 <div className="company-info">
@@ -741,7 +768,9 @@ export default function SubmitExpense() {
                       <td>{idx + 1}</td>
                       <td>{item.payment_method || "—"}</td>
                       <td>{item.reference_no || "—"}</td>
-                      <td>{item.description}</td>
+                      <td>
+                        {item.description && item.description.trim() ? `${item.description.trim()} (${item.category})` : item.category}
+                      </td>
                       <td style={{ textAlign: "right" }}>{Number(item.amount).toFixed(2)}</td>
                     </tr>
                   ))}
@@ -1018,8 +1047,8 @@ export default function SubmitExpense() {
                       )}
                     </div>
                     <div>
-                      <label className="form-label">Description / Business Purpose <span style={{ color: 'var(--danger, #ef4444)' }}>*</span></label>
-                      <textarea required className="form-textarea" rows={1} placeholder="Explain the purpose..." value={item.description} onChange={(e) => handleItemChange(index, 'description', e.target.value)} style={{ resize: 'vertical', minHeight: '38px' }}></textarea>
+                      <label className="form-label">Description / Business Purpose (Optional)</label>
+                      <textarea className="form-textarea" rows={1} placeholder="Explain the purpose..." value={item.description} onChange={(e) => handleItemChange(index, 'description', e.target.value)} style={{ resize: 'vertical', minHeight: '38px' }}></textarea>
                     </div>
                   </div>
 

@@ -316,9 +316,10 @@ tr:hover td {
   }
 
   .print-slip {
-    display: block;
+    display: flex;
+    flex-direction: column;
     width: 100%;
-    padding: 2cm;
+    padding: 1.5cm 2cm;
     margin-bottom: 0;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     background-color: white;
@@ -464,7 +465,8 @@ tr:hover td {
   .voucher-footer {
     display: flex;
     justify-content: space-between;
-    margin-top: 4rem;
+    margin-top: auto;
+    padding-top: 2rem;
   }
 
   .sig-block {
@@ -604,17 +606,20 @@ tr:hover td {
 /* Scroll wrapper for printed slips preview on small screens */
 .voucher-preview-scroll {
   width: 100%;
-  overflow-x: auto;
+  max-height: 280px;
+  overflow: auto;
   -webkit-overflow-scrolling: touch;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
-  margin-bottom: 2rem;
+  margin-bottom: 1rem;
+  background-color: #f8fafc;
 }
 
 .voucher-preview-container {
   min-width: 650px;
-  padding: 1.5rem;
+  padding: 1.25rem;
   background-color: #fff;
+  zoom: 0.75;
 }
 
 /* Mobile Responsiveness Media Queries */
