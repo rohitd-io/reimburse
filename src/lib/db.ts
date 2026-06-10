@@ -1,10 +1,10 @@
 import { createClient } from "@libsql/client";
 
-const url = process.env.TURSO_DB_URL?.trim() || "";
-const authToken = process.env.TURSO_DB_TOKEN?.trim();
+const url = (process.env.TURSO_DATABASE_URL?.trim() || process.env.TURSO_DB_URL?.trim() || "").trim();
+const authToken = (process.env.TURSO_AUTH_TOKEN?.trim() || process.env.TURSO_DB_TOKEN?.trim() || "").trim();
 
 if (!url) {
-  console.warn("TURSO_DB_URL is not set");
+  console.warn("TURSO_DATABASE_URL or TURSO_DB_URL is not set");
 }
 
 const dbUrl = url.endsWith('.turso.') ? url + 'io' : url;
