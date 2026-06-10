@@ -34,7 +34,7 @@ function getProofPaths(proofPathVal?: string): string[] {
       return parsed;
     }
     return [proofPathVal];
-  } catch (e) {
+  } catch {
     return [proofPathVal];
   }
 }
@@ -71,8 +71,10 @@ export default function HRDashboard() {
   const isAnyPDFLoading = Object.keys(loadingPDFs).length > 0;
 
   useEffect(() => {
-    setExcludedPages(new Set());
-    setLoadingPDFs({});
+    Promise.resolve().then(() => {
+      setExcludedPages(new Set());
+      setLoadingPDFs({});
+    });
   }, [selectedExpense]);
 
   const handleToggleExclude = (key: string) => {
@@ -119,7 +121,7 @@ export default function HRDashboard() {
       if (selectedExpense?.id === id) {
         setSelectedExpense({ ...selectedExpense, status });
       }
-    } catch (error) {
+    } catch {
       alert(`Failed to update expense status to ${status}.`);
     }
   };
@@ -148,7 +150,7 @@ export default function HRDashboard() {
       setCurrentCounter(val);
       setIsEditingCounter(false);
       setNewCounter("");
-    } catch (err) {
+    } catch {
       alert("Failed to update the receipt counter.");
     }
   };

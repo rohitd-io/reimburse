@@ -15,7 +15,9 @@ export default function ProofImage({ file, src, alt, style }: ProofImageProps) {
   useEffect(() => {
     if (file) {
       const url = URL.createObjectURL(file);
-      setObjectUrl(url);
+      Promise.resolve().then(() => {
+        setObjectUrl(url);
+      });
       return () => {
         URL.revokeObjectURL(url);
       };

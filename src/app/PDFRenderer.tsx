@@ -101,7 +101,7 @@ export default function PDFRenderer({
     const key = `pdf-${itemIndex}-${fileIndex}`;
     let objectUrl = "";
     let isCancelled = false;
-    let currentLoadingTask: any = null;
+    let currentLoadingTask: ReturnType<typeof pdfjsLib.getDocument> | null = null;
 
     async function loadPDF() {
       setLoading(true);
@@ -130,7 +130,7 @@ export default function PDFRenderer({
         if (isCancelled) {
           try {
             loadingTask.destroy();
-          } catch (e) {}
+          } catch {}
           return;
         }
 
@@ -140,7 +140,7 @@ export default function PDFRenderer({
           if (isCancelled) {
             try {
               loadingTask.destroy();
-            } catch (e) {}
+            } catch {}
             return;
           }
 
@@ -196,7 +196,9 @@ export default function PDFRenderer({
     if ((url && (url.toLowerCase().endsWith('.pdf') || url.startsWith('blob:') || url.includes('blob'))) || file) {
       loadPDF();
     } else {
-      setLoading(false);
+      Promise.resolve().then(() => {
+        setLoading(false);
+      });
     }
 
     return () => {
@@ -205,14 +207,14 @@ export default function PDFRenderer({
       if (currentLoadingTask) {
         try {
           currentLoadingTask.destroy();
-        } catch (e) {}
+        } catch {}
       }
       if (objectUrl) {
         URL.revokeObjectURL(objectUrl);
       }
       onLoadingStateChange?.(key, false);
     };
-  }, [url, file]);
+  }, [url, file, itemIndex, fileIndex, onLoadingStateChange]);
 
   useEffect(() => {
     if (loading) return;

@@ -36,7 +36,7 @@ function getProofPaths(proofPathVal?: string): string[] {
       return parsed;
     }
     return [proofPathVal];
-  } catch (e) {
+  } catch {
     return [proofPathVal];
   }
 }
@@ -84,7 +84,7 @@ export default function SubmitExpense() {
     }
   };
 
-  const handleItemChange = (index: number, field: string, value: any) => {
+  const handleItemChange = (index: number, field: string, value: string | File[]) => {
     const newItems = [...items];
     newItems[index] = { ...newItems[index], [field]: value };
     setItems(newItems);
@@ -154,7 +154,7 @@ export default function SubmitExpense() {
       } else {
         alert("Failed to submit expense report.");
       }
-    } catch (error) {
+    } catch {
       alert("Failed to submit expense report.");
     } finally {
       setSubmitting(false);
@@ -215,7 +215,7 @@ export default function SubmitExpense() {
               <span>Voucher Generated Successfully! (Receipt No: #{submittedExpense.receipt_no || submittedExpense.id})</span>
             </div>
             <p style={{ color: '#2d3748', fontSize: '0.9rem' }}>
-              The browser's print dialog should open automatically. If not, click <strong>Print Voucher</strong> below. You can also include a duplicate copy for your office records.
+              The browser&apos;s print dialog should open automatically. If not, click <strong>Print Voucher</strong> below. You can also include a duplicate copy for your office records.
             </p>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center', marginTop: '0.5rem', borderTop: '1px solid #cbd5e0', paddingTop: '1rem' }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 500, color: '#2d3748' }}>
