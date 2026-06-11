@@ -315,242 +315,249 @@ tr:hover td {
   }
 
   .print-slip {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    padding: 1.5cm 2cm;
-    margin-bottom: 0;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    background-color: white;
-    color: #1a1a1a;
     break-after: page;
     page-break-after: always;
-    box-sizing: border-box;
   }
 
-  .duplicate-slip {
-    border-top: 1px dashed #ccc;
-    padding-top: 4rem;
-  }
-
-  .voucher-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 2rem;
-  }
-
-  .company-info h1 {
-    font-size: 20px;
-    font-weight: 800;
-    margin: 0.15rem 0 0.25rem 0;
-    color: #000;
-  }
-
-  .company-info p {
-    font-size: 11px;
-    color: #444;
-    max-width: 380px;
-    line-height: 1.4;
-  }
-
-  .voucher-title-section {
-    text-align: right;
-  }
-
-  .voucher-title {
-    font-size: 24px;
-    font-weight: 800;
-    color: #1a1a1a; /* Ink-friendly high-contrast dark gray */
-    margin: 0 0 1rem 0;
-    text-transform: uppercase;
-  }
-
-  .receipt-no-box {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    justify-content: flex-end;
-  }
-
-  .receipt-label {
-    font-weight: 800;
-    font-size: 12px;
-    color: #1a1a1a;
-  }
-
-  .receipt-value {
-    background-color: transparent !important;
-    border: 1px solid #1a1a1a;
-    padding: 0.4rem 1rem;
-    border-radius: 4px;
-    min-width: 100px;
-    text-align: center;
-    font-weight: 600;
-  }
-
-  .voucher-details-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 2rem 1.5rem;
-    margin-bottom: 2rem;
-  }
-
-  .detail-item {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-  }
-
-  .detail-label {
-    font-weight: 700;
-    font-size: 11px;
-    color: #1a1a1a;
-    text-transform: uppercase;
-  }
-
-  .detail-value {
-    border-bottom: 1.5px solid #1a1a1a;
-    font-size: 14px;
-    padding: 0.2rem 0;
-    min-height: 24px;
-  }
-
-  .currency-symbol-box {
-    grid-row: span 1;
-    background-color: transparent !important;
-    border: 1.5px solid #1a1a1a;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 36px;
-    font-weight: 800;
-    color: #1a1a1a !important;
-    height: 60px;
-    align-self: center;
-  }
-
-  .payment-for-row {
-    grid-column: span 2;
-  }
-
-  .voucher-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: 3rem;
-  }
-
-  .voucher-table th {
-    background-color: transparent !important;
-    color: #1a1a1a !important;
-    border: 1px solid #1a1a1a;
-    border-top: 1.5px solid #1a1a1a;
-    border-bottom: 1.5px solid #1a1a1a;
-    text-align: left;
-    padding: 0.75rem;
-    font-size: 12px;
-    font-weight: 700;
-    text-transform: uppercase;
-  }
-
-  .voucher-table td {
-    border: 1px solid #1a1a1a;
-    padding: 0.75rem;
-    font-size: 13px;
-  }
-
-  .voucher-table tr:nth-child(even) {
-    background-color: transparent !important;
-  }
-
-  .voucher-footer {
-    display: flex;
-    justify-content: space-between;
-    margin-top: auto;
-    padding-top: 2rem;
-  }
-
-  .sig-block {
-    width: 200px;
-    text-align: center;
-  }
-
-  .sig-line {
-    border-top: 1.5px solid #1a1a1a;
-    margin-top: 3rem;
-    padding-top: 0.5rem;
-    font-weight: 700;
-    font-size: 12px;
-    color: #1a1a1a;
-  }
-
-  /* Proof Pages */
   .print-proof-page {
-    display: block;
-    width: 100%;
-    padding: 2cm;
-    background-color: white;
-    box-sizing: border-box;
     break-after: page;
     page-break-after: always;
   }
+}
 
-  .print-proof-item {
-    display: block;
-    width: 100%;
-    padding: 1.5cm 2cm;
-    box-sizing: border-box;
-    break-inside: avoid;
-    page-break-inside: avoid;
-    background-color: white;
-  }
+/* Shared print-slip and voucher styles (used for both print and screen print preview) */
+.print-slip {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: 1.5cm 2cm;
+  margin-bottom: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background-color: white;
+  color: #1a1a1a;
+  box-sizing: border-box;
+}
 
-  .proof-header {
-    margin-bottom: 0.75rem;
-    border-bottom: 2px solid #1a1a1a;
-    padding-bottom: 0.5rem;
-  }
+.duplicate-slip {
+  border-top: 1px dashed #ccc;
+  padding-top: 4rem;
+}
 
-  .proof-header h3 {
-    font-size: 14px;
-    font-weight: 700;
-    color: #1a1a1a;
-    margin-bottom: 0.2rem;
-  }
+.voucher-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+}
 
-  .proof-header p {
-    font-size: 11px;
-    color: #444;
-  }
+.company-info h1 {
+  font-size: 20px;
+  font-weight: 800;
+  margin: 0.15rem 0 0.25rem 0;
+  color: #000;
+}
 
-  .proof-content {
-    display: block;
-    width: 100%;
-    overflow: hidden;
-  }
+.company-info p {
+  font-size: 11px;
+  color: #444;
+  max-width: 380px;
+  line-height: 1.4;
+}
 
-  .proof-content img {
-    max-width: 100%;
-    display: block;
-    margin: 0 auto;
-  }
+.voucher-title-section {
+  text-align: right;
+}
 
-  .pdf-render-container {
-    width: 100%;
-  }
+.voucher-title {
+  font-size: 24px;
+  font-weight: 800;
+  color: #1a1a1a;
+  margin: 0 0 1rem 0;
+  text-transform: uppercase;
+}
 
-  .pdf-page-wrapper {
-    width: 100%;
-    overflow: hidden;
-  }
+.receipt-no-box {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
 
-  .pdf-render-container img {
-    max-width: 100% !important;
-    height: auto !important;
-    display: block;
-    margin: 0 auto;
-  }
+.receipt-label {
+  font-weight: 800;
+  font-size: 12px;
+  color: #1a1a1a;
+}
+
+.receipt-value {
+  background-color: transparent !important;
+  border: 1px solid #1a1a1a;
+  padding: 0.4rem 1rem;
+  border-radius: 4px;
+  min-width: 100px;
+  text-align: center;
+  font-weight: 600;
+}
+
+.voucher-details-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.detail-label {
+  font-weight: 700;
+  font-size: 11px;
+  color: #1a1a1a;
+  text-transform: uppercase;
+}
+
+.detail-value {
+  border-bottom: 1.5px solid #1a1a1a;
+  font-size: 14px;
+  padding: 0.2rem 0;
+  min-height: 24px;
+}
+
+.currency-symbol-box {
+  grid-row: span 1;
+  background-color: transparent !important;
+  border: 1.5px solid #1a1a1a;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36px;
+  font-weight: 800;
+  color: #1a1a1a !important;
+  height: 60px;
+  align-self: center;
+}
+
+.payment-for-row {
+  grid-column: span 2;
+}
+
+.voucher-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 3rem;
+}
+
+.voucher-table th {
+  background-color: transparent !important;
+  color: #1a1a1a !important;
+  border: 1px solid #1a1a1a;
+  border-top: 1.5px solid #1a1a1a;
+  border-bottom: 1.5px solid #1a1a1a;
+  text-align: left;
+  padding: 0.75rem;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.voucher-table td {
+  border: 1px solid #1a1a1a;
+  padding: 0.75rem;
+  font-size: 13px;
+}
+
+.voucher-table tr:nth-child(even) {
+  background-color: transparent !important;
+}
+
+.voucher-footer {
+  display: flex;
+  justify-content: space-between;
+  margin-top: auto;
+  padding-top: 2rem;
+}
+
+.sig-block {
+  width: 200px;
+  text-align: center;
+}
+
+.sig-line {
+  border-top: 1.5px solid #1a1a1a;
+  margin-top: 3rem;
+  padding-top: 0.5rem;
+  font-weight: 700;
+  font-size: 12px;
+  color: #1a1a1a;
+}
+
+/* Proof Pages */
+.print-proof-page {
+  display: block;
+  width: 100%;
+  padding: 2cm;
+  background-color: white;
+  box-sizing: border-box;
+}
+
+.print-proof-item {
+  display: block;
+  width: 100%;
+  padding: 1.5cm 2cm;
+  box-sizing: border-box;
+  break-inside: avoid;
+  page-break-inside: avoid;
+  background-color: white;
+}
+
+.proof-header {
+  margin-bottom: 0.75rem;
+  border-bottom: 2px solid #1a1a1a;
+  padding-bottom: 0.5rem;
+}
+
+.proof-header h3 {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-bottom: 0.2rem;
+}
+
+.proof-header p {
+  font-size: 11px;
+  color: #444;
+}
+
+.proof-content {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+}
+
+.proof-content img {
+  max-width: 100%;
+  display: block;
+  margin: 0 auto;
+}
+
+.pdf-render-container {
+  width: 100%;
+}
+
+.pdf-page-wrapper {
+  width: 100%;
+  overflow: hidden;
+}
+
+.pdf-render-container img {
+  max-width: 100% !important;
+  height: auto !important;
+  display: block;
+  margin: 0 auto;
 }
 
 /* Responsive Grid layouts */

@@ -63,6 +63,7 @@ export default function SubmitExpense() {
   const [autoPrintTriggered, setAutoPrintTriggered] = useState(false);
   const [showPrintPreview, setShowPrintPreview] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [printCountdown, setPrintCountdown] = useState<number | null>(null);
 
   // CAPTCHA Challenge States
   const [num1, setNum1] = useState(0);
@@ -215,6 +216,7 @@ export default function SubmitExpense() {
           items: mergedItems
         });
         setSubmitted(true);
+        setPrintCountdown(3);
       } else {
         setCaptchaError(result.error || "Failed to submit expense report.");
         generateCaptcha();
@@ -236,6 +238,7 @@ export default function SubmitExpense() {
     setLoadingPDFs({});
     setAutoPrintTriggered(false);
     setShowPrintPreview(false);
+    setPrintCountdown(null);
     generateCaptcha();
   };
 
@@ -244,25 +247,21 @@ export default function SubmitExpense() {
   };
 
   useEffect(() => {
-    if (submittedExpense && !autoPrintTriggered) {
-      if (!isAnyPDFLoading) {
+    if (submittedExpense && !autoPrintTriggered && printCountdown !== null) {
+      if (printCountdown > 0) {
         const timer = setTimeout(() => {
-          window.print();
-          setAutoPrintTriggered(true);
-        }, 500);
+          setPrintCountdown(prev => (prev !== null ? prev - 1 : null));
+        }, 1000);
         return () => clearTimeout(timer);
       } else {
-        // Fallback: trigger print anyway after 3 seconds if PDFs are still loading
-        const timer = setTimeout(() => {
-          if (!autoPrintTriggered) {
-            window.print();
-            setAutoPrintTriggered(true);
-          }
-        }, 3000);
-        return () => clearTimeout(timer);
+        window.print();
+        setTimeout(() => {
+          setAutoPrintTriggered(true);
+          setPrintCountdown(null);
+        }, 0);
       }
     }
-  }, [submittedExpense, isAnyPDFLoading, autoPrintTriggered]);
+  }, [submittedExpense, autoPrintTriggered, printCountdown]);
 
   if (submittedExpense) {
     const hasProofs = submittedExpense.items.some(item => 
@@ -287,8 +286,45 @@ export default function SubmitExpense() {
               </svg>
               <span>Voucher Generated Successfully! (Receipt No: #{submittedExpense.receipt_no || submittedExpense.id})</span>
             </div>
-            <p style={{ color: '#2d3748', fontSize: '0.9rem' }}>
-              The browser&apos;s print dialog should open automatically. If not, click <strong>Print Voucher</strong> below. You can also include a duplicate copy for your office records.
+            <p style={{ color: '#2d3748', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+              {printCountdown !== null ? (
+                <>
+                  <span>
+                    Opening browser print dialog in <strong style={{ fontSize: '1.1rem', color: '#319795' }}>{printCountdown}</strong> seconds...
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setPrintCountdown(null)}
+                    style={{
+                      padding: '0.25rem 0.5rem',
+                      fontSize: '0.75rem',
+                      color: 'var(--danger, #ef4444)',
+                      backgroundColor: 'rgba(239, 68, 68, 0.08)',
+                      border: '1px solid rgba(239, 68, 68, 0.2)',
+                      borderRadius: '0.25rem',
+                      cursor: 'pointer',
+                      fontWeight: 500,
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.15)';
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.08)';
+                    }}
+                  >
+                    Cancel Auto-Print
+                  </button>
+                </>
+              ) : autoPrintTriggered ? (
+                <span>
+                  The browser&apos;s print dialog should have opened automatically. If not, click <strong>Print Voucher</strong> below. You can also include a duplicate copy for your office records.
+                </span>
+              ) : (
+                <span>
+                  Automatic print cancelled. Click <strong>Print Voucher</strong> below to print manually. You can also include a duplicate copy for your office records.
+                </span>
+              )}
             </p>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center', marginTop: '0.5rem', borderTop: '1px solid #cbd5e0', paddingTop: '1rem' }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 500, color: '#2d3748' }}>
@@ -322,6 +358,13 @@ export default function SubmitExpense() {
                 </button>
                 <button onClick={handleReset} className="btn btn-secondary">
                   Fill New Request
+                </button>
+                <button 
+                  onClick={handleReset} 
+                  className="btn btn-secondary"
+                  style={{ color: 'var(--danger)', borderColor: 'rgba(239, 68, 68, 0.3)' }}
+                >
+                  Cancel
                 </button>
               </div>
             </div>
@@ -429,90 +472,100 @@ export default function SubmitExpense() {
                   </button>
                 )}
               </div>
-              <div className="card-body" style={{ padding: '1rem', backgroundColor: '#fff', color: '#1a1a1a', fontFamily: "'Inter', sans-serif" }}>
+              <div className="card-body" style={{ padding: 0, backgroundColor: '#fff' }}>
                 <div className="voucher-preview-scroll">
-                  <div className="voucher-preview-container">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '2px solid #e2e8f0', paddingBottom: '1.5rem', marginBottom: '1.5rem' }}>
-                      <div>
-                        <img src="/Emertech.png" alt="Emertech Logo" style={{ height: '70px', marginBottom: '0.15rem' }} />
-                        <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0 }}>Emertech Innovations Pvt. Ltd.</h3>
-                        <p style={{ fontSize: '0.7rem', color: '#4a5568', margin: 0, maxWidth: '380px', lineHeight: '1.3' }}>
-                          A 609, Shelton Sapphire, behind Croma - Belapur,<br />
-                          Sector 15, CBD Belapur, Maharashtra 400614<br />
-                          <span style={{ fontSize: '0.625rem', color: '#718096', display: 'block', marginTop: '2px' }}>
-                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ display: 'inline-block', marginRight: '3px', verticalAlign: 'middle' }}><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></svg>
-                            info@emertech.io | 
-                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ display: 'inline-block', marginLeft: '6px', marginRight: '3px', verticalAlign: 'middle' }}><circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></svg>
-                            https://emertech.io
-                          </span>
-                        </p>
-                      </div>
-                      <div style={{ textAlign: 'right' }}>
-                        <h4 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1e3a8a', margin: '0 0 0.5rem 0', textTransform: 'uppercase' }}>Payment Voucher</h4>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'flex-end' }}>
-                          <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#1e3a8a' }}>RECEIPT No.</span>
-                          <span style={{ backgroundColor: '#edf2f7', padding: '0.3rem 0.75rem', borderRadius: '4px', fontWeight: 700, fontSize: '0.9rem' }}>{submittedExpense.receipt_no || submittedExpense.id}</span>
+                  <div className="voucher-preview-container" style={{ padding: 0 }}>
+                    <div className="print-slip" style={{ minHeight: 'auto', padding: '1.5cm 2cm' }}>
+                      <div className="voucher-header">
+                        <div className="company-info">
+                          <img src="/Emertech.png" alt="Emertech Logo" style={{ width: 'auto', height: '85px', marginBottom: '0.2rem' }} />
+                          <h1>Emertech Innovations Pvt. Ltd.</h1>
+                          <p>
+                            A 609, Shelton Sapphire, behind Croma - Belapur,<br />
+                            Sector 15, CBD Belapur, Maharashtra 400614<br />
+                            <span style={{ fontSize: '9px', color: '#666', display: 'block', marginTop: '2px' }}>
+                              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ display: 'inline-block', marginRight: '3px', verticalAlign: 'middle' }}><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></svg>
+                              info@emertech.io | 
+                              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ display: 'inline-block', marginLeft: '6px', marginRight: '3px', verticalAlign: 'middle' }}><circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></svg>
+                              https://emertech.io
+                            </span>
+                          </p>
+                        </div>
+                        <div className="voucher-title-section">
+                          <h2 className="voucher-title">Payment Voucher</h2>
+                          <div className="receipt-no-box">
+                            <span className="preview-page-title" style={{ marginRight: '0.5rem', fontWeight: 800 }}>RECEIPT No.</span>
+                            <div className="receipt-value">{submittedExpense.receipt_no || submittedExpense.id}</div>
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
-                      <div style={{ borderBottom: '1px solid #cbd5e0', paddingBottom: '0.25rem' }}>
-                        <span style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, color: '#1e3a8a', textTransform: 'uppercase' }}>Date</span>
-                        <span style={{ fontSize: '0.9rem' }}>{formatDateOnly(submittedExpense.date)}</span>
+                      <div className="voucher-details-grid">
+                        <div className="detail-item">
+                          <span className="detail-label">Date</span>
+                          <div className="detail-value">{formatDateOnly(submittedExpense.date)}</div>
+                        </div>
+                        <div className="detail-item">
+                          <span className="detail-label">Amount</span>
+                          <div className="detail-value">{symbol}{calculateItemsTotal(submittedExpense.items).toFixed(2)}</div>
+                        </div>
+                        <div className="detail-item">
+                          <span className="detail-label">From</span>
+                          <div className="detail-value">{submittedExpense.name}</div>
+                        </div>
+                        <div className="detail-item">
+                          <span className="detail-label">Department</span>
+                          <div className="detail-value">{submittedExpense.department}</div>
+                        </div>
+                        <div className="detail-item payment-for-row">
+                          <span className="detail-label">Payment For</span>
+                          <div className="detail-value">
+                            {Array.from(new Set(submittedExpense.items.map((i) => i.category))).join(", ")}
+                          </div>
+                        </div>
                       </div>
-                      <div style={{ borderBottom: '1px solid #cbd5e0', paddingBottom: '0.25rem' }}>
-                        <span style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, color: '#1e3a8a', textTransform: 'uppercase' }}>Amount</span>
-                        <span style={{ fontSize: '0.9rem', fontWeight: 700 }}>{symbol}{calculateItemsTotal(submittedExpense.items).toFixed(2)}</span>
-                      </div>
-                      <div style={{ borderBottom: '1px solid #cbd5e0', paddingBottom: '0.25rem' }}>
-                        <span style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, color: '#1e3a8a', textTransform: 'uppercase' }}>From</span>
-                        <span style={{ fontSize: '0.9rem' }}>{submittedExpense.name} ({submittedExpense.department})</span>
-                      </div>
-                      <div style={{ borderBottom: '1px solid #cbd5e0', paddingBottom: '0.25rem' }}>
-                        <span style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, color: '#1e3a8a', textTransform: 'uppercase' }}>Payment For</span>
-                        <span style={{ fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'block' }}>
-                          {Array.from(new Set(submittedExpense.items.map(i => i.category))).join(", ")}
-                        </span>
-                      </div>
-                    </div>
 
-                    <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '1.5rem' }}>
-                      <thead>
-                        <tr style={{ backgroundColor: '#1e3a8a', color: '#fff' }}>
-                          <th style={{ fontSize: '0.7rem', padding: '0.5rem', textAlign: 'left', borderRadius: '4px 0 0 0' }}>Sr.</th>
-                          <th style={{ fontSize: '0.7rem', padding: '0.5rem', textAlign: 'left' }}>Method</th>
-                          <th style={{ fontSize: '0.7rem', padding: '0.5rem', textAlign: 'left' }}>Ref No.</th>
-                          <th style={{ fontSize: '0.7rem', padding: '0.5rem', textAlign: 'left' }}>Description</th>
-                          <th style={{ fontSize: '0.7rem', padding: '0.5rem', textAlign: 'right', borderRadius: '0 4px 0 0' }}>Amount</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {submittedExpense.items.map((item, idx) => (
-                          <tr key={idx} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                            <td style={{ fontSize: '0.75rem', padding: '0.5rem' }}>{idx + 1}</td>
-                            <td style={{ fontSize: '0.75rem', padding: '0.5rem' }}>{item.payment_method || "—"}</td>
-                            <td style={{ fontSize: '0.75rem', padding: '0.5rem' }}>{item.reference_no || "—"}</td>
-                            <td style={{ fontSize: '0.75rem', padding: '0.5rem' }}>
-                              {item.description && item.description.trim() ? `${item.description.trim()} (${item.category})` : item.category}
-                            </td>
-                            <td style={{ fontSize: '0.75rem', padding: '0.5rem', textAlign: 'right', fontWeight: 600 }}>{symbol}{Number(item.amount).toFixed(2)}</td>
+                      <table className="voucher-table">
+                        <thead>
+                          <tr>
+                            <th style={{ width: "60px" }}>Sr. No.</th>
+                            <th>Payment Method</th>
+                            <th>Reference No.</th>
+                            <th>Description</th>
+                            <th style={{ textAlign: "right" }}>Amount ({symbol})</th>
                           </tr>
-                        ))}
-                        {[...Array(Math.max(0, 3 - submittedExpense.items.length))].map((_, i) => (
-                          <tr key={`empty-${i}`} style={{ height: '2rem', borderBottom: '1px solid #e2e8f0' }}>
-                            <td colSpan={5}></td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody>
+                          {submittedExpense.items.map((item, idx) => (
+                            <tr key={idx}>
+                              <td>{idx + 1}</td>
+                              <td>{item.payment_method || "—"}</td>
+                              <td>{item.reference_no || "—"}</td>
+                              <td>
+                                {item.description && item.description.trim() ? `${item.description.trim()} (${item.category})` : item.category}
+                              </td>
+                              <td style={{ textAlign: "right" }}>{Number(item.amount).toFixed(2)}</td>
+                            </tr>
+                          ))}
+                          {[...Array(Math.max(0, 3 - submittedExpense.items.length))].map((_, i) => (
+                            <tr key={`empty-${i}`} style={{ height: "3rem" }}>
+                              <td></td>
+                              <td></td>
+                              <td></td>
+                              <td></td>
+                              <td></td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
 
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '2.5rem' }}>
-                      <div style={{ width: '150px', textAlign: 'center' }}>
-                        <div style={{ borderTop: '1px solid #1a1a1a', paddingTop: '0.25rem', fontSize: '0.75rem', fontWeight: 700, color: '#1e3a8a' }}>Received by</div>
-                      </div>
-                      <div style={{ width: '150px', textAlign: 'center' }}>
-                        <div style={{ borderTop: '1px solid #1a1a1a', paddingTop: '0.25rem', fontSize: '0.75rem', fontWeight: 700, color: '#1e3a8a' }}>Client</div>
+                      <div className="voucher-footer">
+                        <div className="sig-block">
+                          <div className="sig-line">Received by</div>
+                        </div>
+                        <div className="sig-block">
+                          <div className="sig-line">Client</div>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -545,91 +598,100 @@ export default function SubmitExpense() {
                     </button>
                   )}
                 </div>
-                <div className="card-body" style={{ padding: '1rem', backgroundColor: '#fff', color: '#1a1a1a', fontFamily: "'Inter', sans-serif" }}>
+                <div className="card-body" style={{ padding: 0, backgroundColor: '#fff' }}>
                   <div className="voucher-preview-scroll">
-                    <div className="voucher-preview-container" style={{ border: '1px dashed #718096', position: 'relative' }}>
-                      <div style={{ position: 'absolute', top: '-10px', left: '20px', backgroundColor: '#fff', padding: '0 0.5rem', fontSize: '0.7rem', fontWeight: 700, color: '#718096' }}>OFFICE COPY (DUPLICATE)</div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '2px solid #e2e8f0', paddingBottom: '1.5rem', marginBottom: '1.5rem' }}>
-                        <div>
-                          <img src="/Emertech.png" alt="Emertech Logo" style={{ height: '70px', marginBottom: '0.15rem' }} />
-                          <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0 }}>Emertech Innovations Pvt. Ltd.</h3>
-                          <p style={{ fontSize: '0.7rem', color: '#4a5568', margin: 0, maxWidth: '380px', lineHeight: '1.3' }}>
-                            A 609, Shelton Sapphire, behind Croma - Belapur,<br />
-                            Sector 15, CBD Belapur, Maharashtra 400614<br />
-                            <span style={{ fontSize: '0.625rem', color: '#718096', display: 'block', marginTop: '2px' }}>
-                              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ display: 'inline-block', marginRight: '3px', verticalAlign: 'middle' }}><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></svg>
-                              info@emertech.io | 
-                              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ display: 'inline-block', marginLeft: '6px', marginRight: '3px', verticalAlign: 'middle' }}><circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></svg>
-                              https://emertech.io
-                            </span>
-                          </p>
-                        </div>
-                        <div style={{ textAlign: 'right' }}>
-                          <h4 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1e3a8a', margin: '0 0 0.5rem 0', textTransform: 'uppercase' }}>Payment Voucher</h4>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'flex-end' }}>
-                            <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#1e3a8a' }}>RECEIPT No.</span>
-                            <span style={{ backgroundColor: '#edf2f7', padding: '0.3rem 0.75rem', borderRadius: '4px', fontWeight: 700, fontSize: '0.9rem' }}>{submittedExpense.receipt_no || submittedExpense.id} (Office)</span>
+                    <div className="voucher-preview-container" style={{ padding: 0 }}>
+                      <div className="print-slip" style={{ minHeight: 'auto', padding: '1.5cm 2cm' }}>
+                        <div className="voucher-header">
+                          <div className="company-info">
+                            <img src="/Emertech.png" alt="Emertech Logo" style={{ width: 'auto', height: '85px', marginBottom: '0.2rem' }} />
+                            <h1>Emertech Innovations Pvt. Ltd.</h1>
+                            <p>
+                              A 609, Shelton Sapphire, behind Croma - Belapur,<br />
+                              Sector 15, CBD Belapur, Maharashtra 400614<br />
+                              <span style={{ fontSize: '9px', color: '#666', display: 'block', marginTop: '2px' }}>
+                                <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ display: 'inline-block', marginRight: '3px', verticalAlign: 'middle' }}><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></svg>
+                                info@emertech.io | 
+                                <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ display: 'inline-block', marginLeft: '6px', marginRight: '3px', verticalAlign: 'middle' }}><circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></svg>
+                                https://emertech.io
+                              </span>
+                            </p>
+                          </div>
+                          <div className="voucher-title-section">
+                            <h2 className="voucher-title">Payment Voucher</h2>
+                            <div className="receipt-no-box">
+                              <span className="preview-page-title" style={{ marginRight: '0.5rem', fontWeight: 800 }}>RECEIPT No.</span>
+                              <div className="receipt-value">{submittedExpense.receipt_no || submittedExpense.id} (Office)</div>
+                            </div>
                           </div>
                         </div>
-                      </div>
 
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
-                        <div style={{ borderBottom: '1px solid #cbd5e0', paddingBottom: '0.25rem' }}>
-                          <span style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, color: '#1e3a8a', textTransform: 'uppercase' }}>Date</span>
-                          <span style={{ fontSize: '0.9rem' }}>{formatDateOnly(submittedExpense.date)}</span>
+                        <div className="voucher-details-grid">
+                          <div className="detail-item">
+                            <span className="detail-label">Date</span>
+                            <div className="detail-value">{formatDateOnly(submittedExpense.date)}</div>
+                          </div>
+                          <div className="detail-item">
+                            <span className="detail-label">Amount</span>
+                            <div className="detail-value">{symbol}{calculateItemsTotal(submittedExpense.items).toFixed(2)}</div>
+                          </div>
+                          <div className="detail-item">
+                            <span className="detail-label">From</span>
+                            <div className="detail-value">{submittedExpense.name}</div>
+                          </div>
+                          <div className="detail-item">
+                            <span className="detail-label">Department</span>
+                            <div className="detail-value">{submittedExpense.department}</div>
+                          </div>
+                          <div className="detail-item payment-for-row">
+                            <span className="detail-label">Payment For</span>
+                            <div className="detail-value">
+                              {Array.from(new Set(submittedExpense.items.map((i) => i.category))).join(", ")}
+                            </div>
+                          </div>
                         </div>
-                        <div style={{ borderBottom: '1px solid #cbd5e0', paddingBottom: '0.25rem' }}>
-                          <span style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, color: '#1e3a8a', textTransform: 'uppercase' }}>Amount</span>
-                          <span style={{ fontSize: '0.9rem', fontWeight: 700 }}>{symbol}{calculateItemsTotal(submittedExpense.items).toFixed(2)}</span>
-                        </div>
-                        <div style={{ borderBottom: '1px solid #cbd5e0', paddingBottom: '0.25rem' }}>
-                          <span style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, color: '#1e3a8a', textTransform: 'uppercase' }}>From</span>
-                          <span style={{ fontSize: '0.9rem' }}>{submittedExpense.name} ({submittedExpense.department})</span>
-                        </div>
-                        <div style={{ borderBottom: '1px solid #cbd5e0', paddingBottom: '0.25rem' }}>
-                          <span style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, color: '#1e3a8a', textTransform: 'uppercase' }}>Payment For</span>
-                          <span style={{ fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'block' }}>
-                            {Array.from(new Set(submittedExpense.items.map(i => i.category))).join(", ")}
-                          </span>
-                        </div>
-                      </div>
 
-                      <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '1.5rem' }}>
-                        <thead>
-                          <tr style={{ backgroundColor: '#1e3a8a', color: '#fff' }}>
-                            <th style={{ fontSize: '0.7rem', padding: '0.5rem', textAlign: 'left', borderRadius: '4px 0 0 0' }}>Sr.</th>
-                            <th style={{ fontSize: '0.7rem', padding: '0.5rem', textAlign: 'left' }}>Method</th>
-                            <th style={{ fontSize: '0.7rem', padding: '0.5rem', textAlign: 'left' }}>Ref No.</th>
-                            <th style={{ fontSize: '0.7rem', padding: '0.5rem', textAlign: 'left' }}>Description</th>
-                            <th style={{ fontSize: '0.7rem', padding: '0.5rem', textAlign: 'right', borderRadius: '0 4px 0 0' }}>Amount</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {submittedExpense.items.map((item, idx) => (
-                            <tr key={idx} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                              <td style={{ fontSize: '0.75rem', padding: '0.5rem' }}>{idx + 1}</td>
-                              <td style={{ fontSize: '0.75rem', padding: '0.5rem' }}>{item.payment_method || "—"}</td>
-                              <td style={{ fontSize: '0.75rem', padding: '0.5rem' }}>{item.reference_no || "—"}</td>
-                              <td style={{ fontSize: '0.75rem', padding: '0.5rem' }}>
-                                {item.description && item.description.trim() ? `${item.description.trim()} (${item.category})` : item.category}
-                              </td>
-                              <td style={{ fontSize: '0.75rem', padding: '0.5rem', textAlign: 'right', fontWeight: 600 }}>{symbol}{Number(item.amount).toFixed(2)}</td>
+                        <table className="voucher-table">
+                          <thead>
+                            <tr>
+                              <th style={{ width: "60px" }}>Sr. No.</th>
+                              <th>Payment Method</th>
+                              <th>Reference No.</th>
+                              <th>Description</th>
+                              <th style={{ textAlign: "right" }}>Amount ({symbol})</th>
                             </tr>
-                          ))}
-                          {[...Array(Math.max(0, 3 - submittedExpense.items.length))].map((_, i) => (
-                            <tr key={`empty-${i}`} style={{ height: '2rem', borderBottom: '1px solid #e2e8f0' }}>
-                              <td colSpan={5}></td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                          </thead>
+                          <tbody>
+                            {submittedExpense.items.map((item, idx) => (
+                              <tr key={idx}>
+                                <td>{idx + 1}</td>
+                                <td>{item.payment_method || "—"}</td>
+                                <td>{item.reference_no || "—"}</td>
+                                <td>
+                                  {item.description && item.description.trim() ? `${item.description.trim()} (${item.category})` : item.category}
+                                </td>
+                                <td style={{ textAlign: "right" }}>{Number(item.amount).toFixed(2)}</td>
+                              </tr>
+                            ))}
+                            {[...Array(Math.max(0, 3 - submittedExpense.items.length))].map((_, i) => (
+                              <tr key={`empty-${i}`} style={{ height: "3rem" }}>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
 
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '2.5rem' }}>
-                        <div style={{ width: '150px', textAlign: 'center' }}>
-                          <div style={{ borderTop: '1px solid #1a1a1a', paddingTop: '0.25rem', fontSize: '0.75rem', fontWeight: 700, color: '#1e3a8a' }}>Received by</div>
-                        </div>
-                        <div style={{ width: '150px', textAlign: 'center' }}>
-                          <div style={{ borderTop: '1px solid #1a1a1a', paddingTop: '0.25rem', fontSize: '0.75rem', fontWeight: 700, color: '#1e3a8a' }}>Client</div>
+                        <div className="voucher-footer">
+                          <div className="sig-block">
+                            <div className="sig-line">Received by</div>
+                          </div>
+                          <div className="sig-block">
+                            <div className="sig-line">Client</div>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -730,15 +792,9 @@ export default function SubmitExpense() {
             <div 
               className="print-slip" 
               style={{
-                minHeight: (includeOfficeCopy && !excludedPages.has("original") && !excludedPages.has("duplicate") && submittedExpense.items.length <= 3) 
-                  ? '13.8cm' 
-                  : '27.7cm',
-                pageBreakAfter: (includeOfficeCopy && !excludedPages.has("original") && !excludedPages.has("duplicate") && submittedExpense.items.length <= 3)
-                  ? 'avoid'
-                  : 'always',
-                breakAfter: (includeOfficeCopy && !excludedPages.has("original") && !excludedPages.has("duplicate") && submittedExpense.items.length <= 3)
-                  ? 'avoid'
-                  : 'page',
+                minHeight: '27.7cm',
+                pageBreakAfter: (includeOfficeCopy && !excludedPages.has("duplicate")) ? 'always' : 'auto',
+                breakAfter: (includeOfficeCopy && !excludedPages.has("duplicate")) ? 'page' : 'auto',
                 ...(submittedExpense.items.length > 5 ? { breakInside: 'auto', pageBreakInside: 'auto' } : {})
               }}
             >
@@ -839,17 +895,11 @@ export default function SubmitExpense() {
           {/* DUPLICATE COPY */}
           {includeOfficeCopy && !excludedPages.has("duplicate") && (
             <div 
-              className={`print-slip ${submittedExpense.items.length <= 3 ? "duplicate-slip" : ""}`}
+              className="print-slip"
               style={{
-                minHeight: (includeOfficeCopy && !excludedPages.has("original") && !excludedPages.has("duplicate") && submittedExpense.items.length <= 3) 
-                  ? '13.8cm' 
-                  : '27.7cm',
-                pageBreakBefore: (includeOfficeCopy && !excludedPages.has("original") && !excludedPages.has("duplicate") && submittedExpense.items.length <= 3)
-                  ? 'avoid'
-                  : 'always',
-                breakBefore: (includeOfficeCopy && !excludedPages.has("original") && !excludedPages.has("duplicate") && submittedExpense.items.length <= 3)
-                  ? 'avoid'
-                  : 'page',
+                minHeight: '27.7cm',
+                pageBreakBefore: (!excludedPages.has("original")) ? 'always' : 'auto',
+                breakBefore: (!excludedPages.has("original")) ? 'page' : 'auto',
                 ...(submittedExpense.items.length > 5 ? { breakInside: 'auto', pageBreakInside: 'auto' } : {})
               }}
             >
