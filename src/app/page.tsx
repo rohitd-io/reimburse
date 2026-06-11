@@ -409,9 +409,18 @@ export default function SubmitExpense() {
                   <div className="voucher-preview-container">
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '2px solid #e2e8f0', paddingBottom: '1.5rem', marginBottom: '1.5rem' }}>
                       <div>
-                        <img src="/Emertech.png" alt="Emertech Logo" style={{ height: '70px', marginBottom: '0.5rem' }} />
+                        <img src="/Emertech.png" alt="Emertech Logo" style={{ height: '70px', marginBottom: '0.15rem' }} />
                         <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0 }}>Emertech Innovations Pvt. Ltd.</h3>
-                        <p style={{ fontSize: '0.7rem', color: '#4a5568', margin: 0, maxWidth: '250px' }}>A-609, Shelton Sapphaire, sector 15, CBD Belapur, Navi Mumbai</p>
+                        <p style={{ fontSize: '0.7rem', color: '#4a5568', margin: 0, maxWidth: '380px', lineHeight: '1.3' }}>
+                          A 609, Shelton Sapphire, behind Croma - Belapur,<br />
+                          Sector 15, CBD Belapur, Maharashtra 400614<br />
+                          <span style={{ fontSize: '0.625rem', color: '#718096', display: 'block', marginTop: '2px' }}>
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ display: 'inline-block', marginRight: '3px', verticalAlign: 'middle' }}><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></svg>
+                            info@emertech.io | 
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ display: 'inline-block', marginLeft: '6px', marginRight: '3px', verticalAlign: 'middle' }}><circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></svg>
+                            https://emertech.io/
+                          </span>
+                        </p>
                       </div>
                       <div style={{ textAlign: 'right' }}>
                         <h4 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1e3a8a', margin: '0 0 0.5rem 0', textTransform: 'uppercase' }}>Payment Voucher</h4>
@@ -515,9 +524,18 @@ export default function SubmitExpense() {
                       <div style={{ position: 'absolute', top: '-10px', left: '20px', backgroundColor: '#fff', padding: '0 0.5rem', fontSize: '0.7rem', fontWeight: 700, color: '#718096' }}>OFFICE COPY (DUPLICATE)</div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '2px solid #e2e8f0', paddingBottom: '1.5rem', marginBottom: '1.5rem' }}>
                         <div>
-                          <img src="/Emertech.png" alt="Emertech Logo" style={{ height: '70px', marginBottom: '0.5rem' }} />
+                          <img src="/Emertech.png" alt="Emertech Logo" style={{ height: '70px', marginBottom: '0.15rem' }} />
                           <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0 }}>Emertech Innovations Pvt. Ltd.</h3>
-                          <p style={{ fontSize: '0.7rem', color: '#4a5568', margin: 0, maxWidth: '250px' }}>A-609, Shelton Sapphaire, sector 15, CBD Belapur, Navi Mumbai</p>
+                          <p style={{ fontSize: '0.7rem', color: '#4a5568', margin: 0, maxWidth: '380px', lineHeight: '1.3' }}>
+                            A 609, Shelton Sapphire, behind Croma - Belapur,<br />
+                            Sector 15, CBD Belapur, Maharashtra 400614<br />
+                            <span style={{ fontSize: '0.625rem', color: '#718096', display: 'block', marginTop: '2px' }}>
+                              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ display: 'inline-block', marginRight: '3px', verticalAlign: 'middle' }}><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></svg>
+                              info@emertech.io | 
+                              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ display: 'inline-block', marginLeft: '6px', marginRight: '3px', verticalAlign: 'middle' }}><circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></svg>
+                              https://emertech.io/
+                            </span>
+                          </p>
                         </div>
                         <div style={{ textAlign: 'right' }}>
                           <h4 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1e3a8a', margin: '0 0 0.5rem 0', textTransform: 'uppercase' }}>Payment Voucher</h4>
@@ -699,9 +717,18 @@ export default function SubmitExpense() {
             >
               <div className="voucher-header">
                 <div className="company-info">
-                  <img src="/Emertech.png" alt="Emertech Logo" style={{ width: 'auto', height: '85px', marginBottom: '0.75rem' }} />
+                  <img src="/Emertech.png" alt="Emertech Logo" style={{ width: 'auto', height: '85px', marginBottom: '0.2rem' }} />
                   <h1>Emertech Innovations Pvt. Ltd.</h1>
-                  <p>A-609, Shelton Sapphaire, sector 15, CBD Belapur, Navi Mumbai</p>
+                  <p>
+                    A 609, Shelton Sapphire, behind Croma - Belapur,<br />
+                    Sector 15, CBD Belapur, Maharashtra 400614<br />
+                    <span style={{ fontSize: '9px', color: '#666', display: 'block', marginTop: '2px' }}>
+                      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ display: 'inline-block', marginRight: '3px', verticalAlign: 'middle' }}><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></svg>
+                      info@emertech.io | 
+                      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ display: 'inline-block', marginLeft: '6px', marginRight: '3px', verticalAlign: 'middle' }}><circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></svg>
+                      https://emertech.io/
+                    </span>
+                  </p>
                 </div>
                 <div className="voucher-title-section">
                   <h2 className="voucher-title">Payment Voucher</h2>
@@ -801,9 +828,18 @@ export default function SubmitExpense() {
             >
               <div className="voucher-header">
                 <div className="company-info">
-                  <img src="/Emertech.png" alt="Emertech Logo" style={{ width: 'auto', height: '85px', marginBottom: '0.75rem' }} />
+                  <img src="/Emertech.png" alt="Emertech Logo" style={{ width: 'auto', height: '85px', marginBottom: '0.2rem' }} />
                   <h1>Emertech Innovations Pvt. Ltd.</h1>
-                  <p>A-609, Shelton Sapphaire, sector 15, CBD Belapur, Navi Mumbai</p>
+                  <p>
+                    A 609, Shelton Sapphire, behind Croma - Belapur,<br />
+                    Sector 15, CBD Belapur, Maharashtra 400614<br />
+                    <span style={{ fontSize: '9px', color: '#666', display: 'block', marginTop: '2px' }}>
+                      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ display: 'inline-block', marginRight: '3px', verticalAlign: 'middle' }}><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></svg>
+                      info@emertech.io | 
+                      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ display: 'inline-block', marginLeft: '6px', marginRight: '3px', verticalAlign: 'middle' }}><circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></svg>
+                      https://emertech.io/
+                    </span>
+                  </p>
                 </div>
                 <div className="voucher-title-section">
                   <h2 className="voucher-title">Payment Voucher</h2>
