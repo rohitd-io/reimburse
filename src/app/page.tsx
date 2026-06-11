@@ -62,6 +62,9 @@ export default function SubmitExpense() {
   const [loadingPDFs, setLoadingPDFs] = useState<Record<string, boolean>>({});
   const [autoPrintTriggered, setAutoPrintTriggered] = useState(false);
   const [showPrintPreview, setShowPrintPreview] = useState(false);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [isDraggingPage, setIsDraggingPage] = useState(false);
+  const [activeTooltip, setActiveTooltip] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [printCountdown, setPrintCountdown] = useState<number | null>(null);
 
@@ -94,6 +97,49 @@ export default function SubmitExpense() {
       generateCaptcha();
     });
   }, [generateCaptcha]);
+
+  useEffect(() => {
+    const handleDragOver = (e: DragEvent) => {
+      e.preventDefault();
+    };
+    const handleDragEnter = (e: DragEvent) => {
+      e.preventDefault();
+      setIsDraggingPage(true);
+    };
+    const handleDragLeave = (e: DragEvent) => {
+      e.preventDefault();
+      if (e.clientX === 0 && e.clientY === 0) {
+        setIsDraggingPage(false);
+      }
+    };
+    const handleDrop = (e: DragEvent) => {
+      e.preventDefault();
+      setIsDraggingPage(false);
+      setDragOverIndex(null);
+    };
+
+    window.addEventListener('dragover', handleDragOver);
+    window.addEventListener('dragenter', handleDragEnter);
+    window.addEventListener('dragleave', handleDragLeave);
+    window.addEventListener('drop', handleDrop);
+
+    return () => {
+      window.removeEventListener('dragover', handleDragOver);
+      window.removeEventListener('dragenter', handleDragEnter);
+      window.removeEventListener('dragleave', handleDragLeave);
+      window.removeEventListener('drop', handleDrop);
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleGlobalClick = () => {
+      setActiveTooltip(null);
+    };
+    window.addEventListener('click', handleGlobalClick);
+    return () => {
+      window.removeEventListener('click', handleGlobalClick);
+    };
+  }, []);
 
   const handlePDFLoadingStateChange = useCallback((key: string, isLoading: boolean) => {
     setLoadingPDFs((prev) => {
@@ -1110,10 +1156,40 @@ export default function SubmitExpense() {
       )}
 
       <div className="card no-print">
-        <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
           <h2 className="card-title">Expense Details</h2>
-          <div style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--primary)' }}>
-            Total: {symbol}{calculateTotal().toFixed(2)}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
+            {/* Currency Selector on top */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem' }}>
+              <span className="tooltip-container" style={{ fontWeight: 500, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                Currency:
+                <span 
+                  className="info-bubble" 
+                  style={{ marginLeft: '4px' }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setActiveTooltip(activeTooltip === 'currency' ? null : 'currency');
+                  }}
+                >
+                  i
+                </span>
+                <div className={`tooltip-popup ${activeTooltip === 'currency' ? 'active' : ''}`}>
+                  Default is INR. Change currency from the dropdown if needed.
+                </div>
+              </span>
+              <select 
+                className="form-select" 
+                value={currency} 
+                onChange={(e) => setCurrency(e.target.value as 'INR' | 'USD')}
+                style={{ width: '100px', height: '32px', padding: '0.25rem 0.5rem' }}
+              >
+                <option value="INR">INR (₹)</option>
+                <option value="USD">USD ($)</option>
+              </select>
+            </div>
+            <div style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--primary)' }}>
+              Total: {symbol}{calculateTotal().toFixed(2)}
+            </div>
           </div>
         </div>
         <div className="card-body">
@@ -1122,9 +1198,11 @@ export default function SubmitExpense() {
               <label>Leave this field blank</label>
               <input type="text" name="honeypot" tabIndex={-1} autoComplete="off" value={honeypot} onChange={(e) => setHoneypot(e.target.value)} />
             </div>
-            <div className="form-grid" style={{ marginBottom: '2rem' }}>
+            
+            {/* Identity Grid */}
+            <div className="form-grid" style={{ marginBottom: '1.25rem' }}>
               <div>
-                <label className="form-label">Employee Name <span style={{ color: 'var(--danger, #ef4444)' }}>*</span></label>
+                <label className="form-label" style={{ marginBottom: '0.25rem' }}>Employee Name <span style={{ color: 'var(--danger, #ef4444)' }}>*</span></label>
                 <input 
                   required 
                   type="text" 
@@ -1142,7 +1220,23 @@ export default function SubmitExpense() {
                 </datalist>
               </div>
               <div>
-                <label className="form-label">Department <span style={{ color: 'var(--danger, #ef4444)' }}>*</span></label>
+                <label className="form-label" style={{ marginBottom: '0.25rem', display: 'flex', alignItems: 'center' }}>
+                  <span className="tooltip-container" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                    Department <span style={{ color: 'var(--danger, #ef4444)' }}>*</span>
+                    <span 
+                      className="info-bubble" 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActiveTooltip(activeTooltip === 'dept' ? null : 'dept');
+                      }}
+                    >
+                      i
+                    </span>
+                    <div className={`tooltip-popup ${activeTooltip === 'dept' ? 'active' : ''}`}>
+                      Default is Engineering. Change to your department from the dropdown if needed.
+                    </div>
+                  </span>
+                </label>
                 <select required className="form-select" value={department} onChange={(e) => setDepartment(e.target.value)}>
                   <option value="Engineering / Software Development">Engineering / Software Development</option>
                   <option value="Product Management">Product Management</option>
@@ -1159,253 +1253,358 @@ export default function SubmitExpense() {
                   <option value="Procurement / Vendor Management">Procurement / Vendor Management</option>
                   <option value="Executive Management">Executive Management</option>
                 </select>
-                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
-                  Default is Engineering. Change to your department from the dropdown if needed.
-                </p>
               </div>
             </div>
 
-            <div style={{ marginBottom: '2rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            {/* Line Items Tabular Grid */}
+            <div style={{ marginBottom: '1.25rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
                 <h3 style={{ fontSize: '1rem', fontWeight: 600 }}>Line Items</h3>
-                <button type="button" onClick={handleAddItem} className="btn btn-secondary" style={{ padding: '0.25rem 0.75rem', fontSize: '0.75rem' }}>
+                <button type="button" onClick={handleAddItem} className="btn btn-secondary" style={{ padding: '0.25rem 0.75rem', fontSize: '0.75rem', height: '32px' }}>
                   + Add Item
                 </button>
               </div>
               
-              {items.map((item, index) => (
-                <div key={index} style={{ backgroundColor: '#f8fafc', padding: '1rem', borderRadius: '0.5rem', border: '1px solid var(--border)', marginBottom: '1rem', position: 'relative' }}>
-                  {items.length > 1 && (
-                    <button 
-                      type="button" 
-                      onClick={() => handleRemoveItem(index)}
-                      style={{ position: 'absolute', top: '0.5rem', right: '0.5rem', background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', padding: '0.25rem' }}
-                      title="Remove Item"
-                    >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                    </button>
-                  )}
-                  <div className="form-grid" style={{ marginBottom: '1rem' }}>
-                    <div>
-                      <label className="form-label">Expense Category <span style={{ color: 'var(--danger, #ef4444)' }}>*</span></label>
-                      <select required className="form-select" value={item.category || "Travel & Transit"} onChange={(e) => handleItemChange(index, 'category', e.target.value)}>
-                        <option value="Travel & Transit">Travel & Transit</option>
-                        <option value="Accommodation & Hotels">Accommodation & Hotels</option>
-                        <option value="Meals & Entertainment">Meals & Entertainment</option>
-                        <option value="Office Supplies">Office Supplies</option>
-                        <option value="Software Subscriptions">Software Subscriptions</option>
-                        <option value="Cloud Services">Cloud Services</option>
-                        <option value="Internet & Mobile Bills">Internet & Mobile Bills</option>
-                        <option value="Hardware & Equipment">Hardware & Equipment</option>
-                        <option value="Training & Certifications">Training & Certifications</option>
-                        <option value="Books & Learning Materials">Books & Learning Materials</option>
-                        <option value="Conference & Event Fees">Conference & Event Fees</option>
-                        <option value="Client Meetings">Client Meetings</option>
-                        <option value="Marketing & Advertising">Marketing & Advertising</option>
-                        <option value="Recruitment Expenses">Recruitment Expenses</option>
-                        <option value="Professional Services">Professional Services</option>
-                        <option value="Legal & Compliance Fees">Legal & Compliance Fees</option>
-                        <option value="Health & Wellness">Health & Wellness</option>
-                        <option value="Remote Work Expenses">Remote Work Expenses</option>
-                        <option value="Vehicle & Fuel Expenses">Vehicle & Fuel Expenses</option>
-                        <option value="Parking & Tolls">Parking & Tolls</option>
-                        <option value="Utilities">Utilities</option>
-                        <option value="Team Building Activities">Team Building Activities</option>
-                        <option value="Employee Benefits">Employee Benefits</option>
-                        <option value="Vendor Payments">Vendor Payments</option>
-                        <option value="Project Expenses">Project Expenses</option>
-                        <option value="Miscellaneous">Miscellaneous</option>
-                        <option value="Other">Other</option>
-                      </select>
-                      <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
-                        Default is Travel & Transit. Change to another category from the dropdown if needed.
-                      </p>
-                      {item.category === "Other" && (
-                        <div style={{ marginTop: '0.5rem' }}>
-                          <input 
-                            required 
-                            type="text" 
-                            className="form-input" 
-                            placeholder="Specify other reason..." 
-                            value={item.otherReason || ""} 
-                            onChange={(e) => handleItemChange(index, 'otherReason', e.target.value)} 
-                          />
-                        </div>
-                      )}
-                    </div>
-                    <div>
-                      <label className="form-label">Description / Business Purpose (Optional)</label>
-                      <textarea className="form-textarea" rows={1} placeholder="Explain the purpose..." value={item.description} onChange={(e) => handleItemChange(index, 'description', e.target.value)} style={{ resize: 'vertical', minHeight: '38px' }}></textarea>
-                    </div>
-                  </div>
-
-                  <div className="form-grid" style={{ marginBottom: '1rem' }}>
-                    <div>
-                      <label className="form-label">Payment Method <span style={{ color: 'var(--danger, #ef4444)' }}>*</span></label>
-                      <select required className="form-select" value={item.paymentMethod || "UPI"} onChange={(e) => handleItemChange(index, 'paymentMethod', e.target.value)}>
-                        <option value="UPI">UPI</option>
-                        <option value="Card">Card</option>
-                        <option value="Bank Transfer">Bank Transfer</option>
-                        <option value="Cash">Cash</option>
-                      </select>
-                      <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
-                        Default is UPI. Choose another option from the dropdown if needed.
-                      </p>
-                    </div>
-                    <div>
-                      <label className="form-label">Amount <span style={{ color: 'var(--danger, #ef4444)' }}>*</span></label>
-                      <div className="input-group">
-                        <select 
-                          className="input-group-select" 
-                          value={currency} 
-                          onChange={(e) => setCurrency(e.target.value as 'INR' | 'USD')}
-                        >
-                          <option value="INR">INR (₹)</option>
-                          <option value="USD">USD ($)</option>
-                        </select>
-                        <input required type="number" step="0.01" min="0" className="form-input input-group-input" placeholder="0.00" value={item.amount} onChange={(e) => handleItemChange(index, 'amount', e.target.value)} />
-                      </div>
-                      <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
-                        Default is INR. Change currency from the dropdown if needed.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="form-grid" style={{ marginBottom: '1rem' }}>
-                    <div>
-                      <label className="form-label">Reference Number</label>
-                      <input type="text" className="form-input" placeholder="Transaction ID, Cheque No..." value={item.referenceNo || ""} onChange={(e) => handleItemChange(index, 'referenceNo', e.target.value)} />
-                    </div>
-                    <div>
-                      <label className="form-label">Proof Document(s) (Image/PDF) (Optional)</label>
-                      <input 
-                        type="file" 
-                        multiple
-                        accept="image/*,.pdf" 
-                        className="form-input" 
-                        style={{ padding: '0.35rem' }} 
-                        onChange={(e) => {
-                          const files = Array.from(e.target.files || []);
-                          const validFiles: File[] = [];
-                          for (const file of files) {
-                            const isPDF = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
-                            const isImage = file.type.startsWith('image/');
-                            if (!isPDF && !isImage) {
-                              alert(`Unsupported file type: "${file.name}". Only images and PDF files are allowed.`);
-                              continue;
-                            }
-                            if (file.size > 4 * 1024 * 1024) {
-                              alert(`File "${file.name}" exceeds the 4MB size limit.`);
-                            } else {
-                              validFiles.push(file);
-                            }
-                          }
-                          const existingProofs = item.proofs || [];
-                          handleItemChange(index, 'proofs', [...existingProofs, ...validFiles]);
-                          e.target.value = ""; // Clear so selecting same files triggers onChange
-                        }} 
-                      />
-                      <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Max size: 4MB per file. Select multiple files if needed.</p>
-                      
-                      {item.proofs && item.proofs.length > 0 && (
-                        <div className="file-chip-container">
-                          {item.proofs.map((file, fileIdx) => (
-                            <div key={fileIdx} className="file-chip">
-                              <span className="file-chip-name">{file.name}</span>
-                              <button
-                                type="button"
-                                className="file-chip-delete"
-                                onClick={() => {
-                                  const newProofs = [...item.proofs];
-                                  newProofs.splice(fileIdx, 1);
-                                  handleItemChange(index, 'proofs', newProofs);
-                                }}
-                              >
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                  <line x1="18" y1="6" x2="6" y2="18"/>
-                                  <line x1="6" y1="6" x2="18" y2="18"/>
-                                </svg>
-                              </button>
+              <div className="table-wrapper" style={{ border: '1px solid var(--border)', borderRadius: '0.5rem', overflow: 'visible' }}>
+                <table className="compact-items-table">
+                  <thead>
+                    <tr>
+                      <th style={{ width: '22%' }}>
+                        <span className="tooltip-container" style={{ display: 'inline-flex', alignItems: 'center' }}>
+                          Expense Category
+                          <span 
+                            className="info-bubble" 
+                            style={{ marginLeft: '4px' }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveTooltip(activeTooltip === 'category' ? null : 'category');
+                            }}
+                          >
+                            i
+                          </span>
+                          <div className={`tooltip-popup ${activeTooltip === 'category' ? 'active' : ''}`}>
+                            Default is Travel & Transit. Change to another category from the dropdown if needed.
+                          </div>
+                        </span>
+                      </th>
+                      <th style={{ width: '25%' }}>Description / Business Purpose</th>
+                      <th style={{ width: '12%' }}>
+                        <span className="tooltip-container" style={{ display: 'inline-flex', alignItems: 'center' }}>
+                          Method
+                          <span 
+                            className="info-bubble" 
+                            style={{ marginLeft: '4px' }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveTooltip(activeTooltip === 'method' ? null : 'method');
+                            }}
+                          >
+                            i
+                          </span>
+                          <div className={`tooltip-popup ${activeTooltip === 'method' ? 'active' : ''}`}>
+                            Default is UPI. Choose another option from the dropdown if needed.
+                          </div>
+                        </span>
+                      </th>
+                      <th style={{ width: '20%' }}>
+                        <span className="tooltip-container" style={{ display: 'inline-flex', alignItems: 'center' }}>
+                          Amount
+                          <span 
+                            className="info-bubble" 
+                            style={{ marginLeft: '4px' }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveTooltip(activeTooltip === 'amount' ? null : 'amount');
+                            }}
+                          >
+                            i
+                          </span>
+                          <div className={`tooltip-popup ${activeTooltip === 'amount' ? 'active' : ''}`}>
+                            Default is INR. Change currency from the dropdown at the top if needed.
+                          </div>
+                        </span>
+                      </th>
+                      <th style={{ width: '11%' }}>Ref. Number</th>
+                      <th style={{ width: '10%' }}>Proof Docs</th>
+                      <th style={{ width: '40px', textAlign: 'center' }}></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {items.map((item, index) => (
+                      <tr key={index}>
+                        <td data-label="Expense Category" style={{ verticalAlign: 'top' }}>
+                          <select required className="form-select" value={item.category || "Travel & Transit"} onChange={(e) => handleItemChange(index, 'category', e.target.value)}>
+                            <option value="Travel & Transit">Travel & Transit</option>
+                            <option value="Accommodation & Hotels">Accommodation & Hotels</option>
+                            <option value="Meals & Entertainment">Meals & Entertainment</option>
+                            <option value="Office Supplies">Office Supplies</option>
+                            <option value="Software Subscriptions">Software Subscriptions</option>
+                            <option value="Cloud Services">Cloud Services</option>
+                            <option value="Internet & Mobile Bills">Internet & Mobile Bills</option>
+                            <option value="Hardware & Equipment">Hardware & Equipment</option>
+                            <option value="Training & Certifications">Training & Certifications</option>
+                            <option value="Books & Learning Materials">Books & Learning Materials</option>
+                            <option value="Conference & Event Fees">Conference & Event Fees</option>
+                            <option value="Client Meetings">Client Meetings</option>
+                            <option value="Marketing & Advertising">Marketing & Advertising</option>
+                            <option value="Recruitment Expenses">Recruitment Expenses</option>
+                            <option value="Professional Services">Professional Services</option>
+                            <option value="Legal & Compliance Fees">Legal & Compliance Fees</option>
+                            <option value="Health & Wellness">Health & Wellness</option>
+                            <option value="Remote Work Expenses">Remote Work Expenses</option>
+                            <option value="Vehicle & Fuel Expenses">Vehicle & Fuel Expenses</option>
+                            <option value="Parking & Tolls">Parking & Tolls</option>
+                            <option value="Utilities">Utilities</option>
+                            <option value="Team Building Activities">Team Building Activities</option>
+                            <option value="Employee Benefits">Employee Benefits</option>
+                            <option value="Vendor Payments">Vendor Payments</option>
+                            <option value="Project Expenses">Project Expenses</option>
+                            <option value="Miscellaneous">Miscellaneous</option>
+                            <option value="Other">Other</option>
+                          </select>
+                          {item.category === "Other" && (
+                            <div style={{ marginTop: '0.35rem' }}>
+                              <input 
+                                required 
+                                type="text" 
+                                className="form-input" 
+                                placeholder="Specify reason..." 
+                                value={item.otherReason || ""} 
+                                onChange={(e) => handleItemChange(index, 'otherReason', e.target.value)} 
+                              />
                             </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
+                          )}
+                        </td>
+                        <td data-label="Description / Purpose" style={{ verticalAlign: 'top' }}>
+                          <input 
+                            type="text"
+                            className="form-input" 
+                            placeholder="Explain the purpose (optional)..." 
+                            value={item.description} 
+                            onChange={(e) => handleItemChange(index, 'description', e.target.value)} 
+                          />
+                        </td>
+                        <td data-label="Method" style={{ verticalAlign: 'top' }}>
+                          <select required className="form-select" value={item.paymentMethod || "UPI"} onChange={(e) => handleItemChange(index, 'paymentMethod', e.target.value)}>
+                            <option value="UPI">UPI</option>
+                            <option value="Card">Card</option>
+                            <option value="Bank Transfer">Bank Transfer</option>
+                            <option value="Cash">Cash</option>
+                          </select>
+                        </td>
+                        <td data-label="Amount" style={{ verticalAlign: 'top' }}>
+                          <div className="input-group">
+                            <span style={{ 
+                              display: 'inline-flex', 
+                              alignItems: 'center', 
+                              padding: '0 0.6rem', 
+                              backgroundColor: '#f8fafc', 
+                              borderRight: '1px solid var(--border)', 
+                              fontWeight: 600,
+                              fontSize: '0.85rem',
+                              color: 'var(--text-main)',
+                              userSelect: 'none'
+                            }}>
+                              {symbol}
+                            </span>
+                            <input required type="number" step="0.01" min="0" className="form-input input-group-input" placeholder="0.00" value={item.amount} onChange={(e) => handleItemChange(index, 'amount', e.target.value)} />
+                          </div>
+                        </td>
+                        <td data-label="Ref. Number" style={{ verticalAlign: 'top' }}>
+                          <input type="text" className="form-input" placeholder="Ref/Txn ID..." value={item.referenceNo || ""} onChange={(e) => handleItemChange(index, 'referenceNo', e.target.value)} />
+                        </td>
+                        <td 
+                          data-label="Proof Docs" 
+                          style={{ verticalAlign: 'top', position: 'relative' }}
+                          onDragOver={(e) => {
+                            e.preventDefault();
+                            if (dragOverIndex !== index) {
+                              setDragOverIndex(index);
+                            }
+                          }}
+                          onDragLeave={() => {
+                            setDragOverIndex(null);
+                          }}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            setDragOverIndex(null);
+                            const files = Array.from(e.dataTransfer.files || []);
+                            const validFiles: File[] = [];
+                            for (const file of files) {
+                              const isPDF = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+                              const isImage = file.type.startsWith('image/');
+                              if (!isPDF && !isImage) {
+                                alert(`Unsupported file type: "${file.name}". Only images and PDF files are allowed.`);
+                                continue;
+                              }
+                              if (file.size > 4 * 1024 * 1024) {
+                                alert(`File "${file.name}" exceeds the 4MB size limit.`);
+                              } else {
+                                validFiles.push(file);
+                              }
+                            }
+                            const existingProofs = item.proofs || [];
+                            handleItemChange(index, 'proofs', [...existingProofs, ...validFiles]);
+                          }}
+                        >
+                          <div 
+                            className={`compact-file-upload ${isDraggingPage ? 'page-dragging' : ''} ${dragOverIndex === index ? 'drag-over' : ''}`}
+                            style={{ transition: 'all 0.2s ease-in-out' }}
+                          >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ color: 'var(--text-muted)' }}>
+                              <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+                            </svg>
+                            <span>{dragOverIndex === index ? 'Drop Here!' : 'Attach'}</span>
+                            {item.proofs && item.proofs.length > 0 && dragOverIndex !== index && (
+                              <span className="compact-file-badge">{item.proofs.length}</span>
+                            )}
+                            <input 
+                              type="file" 
+                              multiple
+                              accept="image/*,.pdf" 
+                              onChange={(e) => {
+                                const files = Array.from(e.target.files || []);
+                                const validFiles: File[] = [];
+                                for (const file of files) {
+                                  const isPDF = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+                                  const isImage = file.type.startsWith('image/');
+                                  if (!isPDF && !isImage) {
+                                    alert(`Unsupported file type: "${file.name}". Only images and PDF files are allowed.`);
+                                    continue;
+                                  }
+                                  if (file.size > 4 * 1024 * 1024) {
+                                    alert(`File "${file.name}" exceeds the 4MB size limit.`);
+                                  } else {
+                                    validFiles.push(file);
+                                  }
+                                }
+                                const existingProofs = item.proofs || [];
+                                handleItemChange(index, 'proofs', [...existingProofs, ...validFiles]);
+                                e.target.value = ""; // Clear so selecting same files triggers onChange
+                              }} 
+                            />
+                          </div>
+                          {item.proofs && item.proofs.length > 0 && (
+                            <div className="compact-file-chips">
+                              {item.proofs.map((file, fileIdx) => (
+                                <div key={fileIdx} className="compact-file-chip" title={file.name}>
+                                  <span className="file-chip-name" style={{ maxWidth: '80px' }}>{file.name}</span>
+                                  <button
+                                    type="button"
+                                    className="file-chip-delete"
+                                    onClick={() => {
+                                      const newProofs = [...item.proofs];
+                                      newProofs.splice(fileIdx, 1);
+                                      handleItemChange(index, 'proofs', newProofs);
+                                    }}
+                                  >
+                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                                      <line x1="18" y1="6" x2="6" y2="18"/>
+                                      <line x1="6" y1="6" x2="18" y2="18"/>
+                                    </svg>
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </td>
+                        <td className="actions-cell" style={{ textAlign: 'center', verticalAlign: 'top', paddingTop: '0.6rem' }}>
+                          {items.length > 1 && (
+                            <button 
+                              type="button" 
+                              onClick={() => handleRemoveItem(index)}
+                              style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', padding: '0.25rem' }}
+                              title="Remove Item"
+                            >
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
 
-            {/* CAPTCHA Spam Protection */}
-            <div style={{ 
-              backgroundColor: '#f8fafc', 
-              padding: '1.25rem', 
-              borderRadius: '0.5rem', 
-              border: '1px solid var(--border)', 
-              marginBottom: '1.5rem',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '0.5rem'
-            }}>
-              <label className="form-label" style={{ fontWeight: 600, color: 'var(--text-main)' }}>
-                Spam Verification <span style={{ color: 'var(--danger, #ef4444)' }}>*</span>
-              </label>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+            {/* CAPTCHA & Form Actions Footer */}
+            <div 
+              className="review-footer-flex form-actions-footer" 
+              style={{ 
+                marginTop: '1.5rem', 
+                paddingTop: '1rem',
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                alignItems: 'center', 
+                flexWrap: 'wrap',
+                gap: '1rem'
+              }}
+            >
+              {/* Inline CAPTCHA */}
+              <div style={{ 
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                backgroundColor: '#f8fafc',
+                padding: '0.35rem 0.75rem',
+                borderRadius: '0.375rem',
+                border: '1px solid var(--border)'
+              }}>
+                <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-main)', whiteSpace: 'nowrap' }}>
+                  Spam Check:
+                </span>
                 <span style={{ 
                   backgroundColor: '#e2e8f0', 
-                  padding: '0.5rem 1rem', 
-                  borderRadius: '0.375rem', 
+                  padding: '0.25rem 0.5rem', 
+                  borderRadius: '0.25rem', 
                   fontWeight: 700, 
-                  fontSize: '1rem',
-                  letterSpacing: '0.05em',
+                  fontSize: '0.9rem',
                   userSelect: 'none'
                 }}>
-                  {num1} + {num2} = ?
+                  {num1} + {num2} =
                 </span>
                 <input 
                   required
                   type="number" 
                   className="form-input" 
-                  placeholder="Answer..." 
                   value={captchaAnswer}
                   onChange={(e) => setCaptchaAnswer(e.target.value)}
-                  style={{ maxWidth: '120px' }}
+                  style={{ width: '100px', height: '32px', padding: '0.25rem 0.5rem', textAlign: 'center' }}
                 />
                 <button 
                   type="button" 
                   className="btn btn-secondary" 
                   onClick={generateCaptcha}
-                  style={{ padding: '0.5rem 0.75rem', fontSize: '0.8rem' }}
-                  title="Generate new question"
+                  style={{ padding: '0.25rem 0.4rem', height: '32px' }}
+                  title="New question"
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                     <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
                   </svg>
                 </button>
               </div>
-              {captchaError && (
-                <p style={{ color: 'var(--danger, #ef4444)', fontSize: '0.8rem', margin: 0, fontWeight: 500 }}>
-                  {captchaError}
-                </p>
-              )}
-            </div>
 
-            <div className="review-footer-flex form-actions-footer" style={{ marginTop: '2rem' }}>
-              <button type="button" className="btn btn-secondary" onClick={handleReset}>Cancel</button>
-              <button type="button" onClick={handleAddItem} className="btn btn-secondary" style={{ marginRight: 'auto' }}>
-                + Add New Item
-              </button>
-              <button type="submit" className="btn btn-primary" disabled={submitting}>
-                {submitting ? (
-                  "Saving..."
-                ) : (
-                  <>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                    Save & Submit
-                  </>
-                )}
-              </button>
+              {/* Action Buttons */}
+              <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginLeft: 'auto' }}>
+                <button type="button" className="btn btn-secondary" onClick={handleReset} style={{ height: '38px' }}>Cancel</button>
+                <button type="submit" className="btn btn-primary" disabled={submitting} style={{ height: '38px' }}>
+                  {submitting ? (
+                    "Saving..."
+                  ) : (
+                    <>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                      Save & Submit
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
+            
+            {captchaError && (
+              <p style={{ color: 'var(--danger, #ef4444)', fontSize: '0.8rem', marginTop: '0.5rem', textAlign: 'right', fontWeight: 500 }}>
+                {captchaError}
+              </p>
+            )}
           </form>
         </div>
       </div>
