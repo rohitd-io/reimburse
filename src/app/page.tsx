@@ -159,6 +159,21 @@ export default function SubmitExpense() {
       setSubmitting(false);
       return;
     }
+
+    // Validate total upload size (Max 4.5MB total across all files to fit Vercel 5MB payload limit)
+    let totalUploadSize = 0;
+    for (const item of items) {
+      if (item.proofs) {
+        for (const file of item.proofs) {
+          totalUploadSize += file.size;
+        }
+      }
+    }
+    if (totalUploadSize > 4.5 * 1024 * 1024) {
+      setCaptchaError("The total size of uploaded files exceeds 4.5MB. Please compress your files or upload them in smaller batches.");
+      setSubmitting(false);
+      return;
+    }
     
     try {
       const formData = new FormData();
@@ -418,7 +433,7 @@ export default function SubmitExpense() {
                             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ display: 'inline-block', marginRight: '3px', verticalAlign: 'middle' }}><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></svg>
                             info@emertech.io | 
                             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ display: 'inline-block', marginLeft: '6px', marginRight: '3px', verticalAlign: 'middle' }}><circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></svg>
-                            https://emertech.io/
+                            https://emertech.io
                           </span>
                         </p>
                       </div>
@@ -533,7 +548,7 @@ export default function SubmitExpense() {
                               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ display: 'inline-block', marginRight: '3px', verticalAlign: 'middle' }}><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></svg>
                               info@emertech.io | 
                               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ display: 'inline-block', marginLeft: '6px', marginRight: '3px', verticalAlign: 'middle' }}><circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></svg>
-                              https://emertech.io/
+                              https://emertech.io
                             </span>
                           </p>
                         </div>
@@ -726,7 +741,7 @@ export default function SubmitExpense() {
                       <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ display: 'inline-block', marginRight: '3px', verticalAlign: 'middle' }}><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></svg>
                       info@emertech.io | 
                       <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ display: 'inline-block', marginLeft: '6px', marginRight: '3px', verticalAlign: 'middle' }}><circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></svg>
-                      https://emertech.io/
+                      https://emertech.io
                     </span>
                   </p>
                 </div>
@@ -837,7 +852,7 @@ export default function SubmitExpense() {
                       <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ display: 'inline-block', marginRight: '3px', verticalAlign: 'middle' }}><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></svg>
                       info@emertech.io | 
                       <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ display: 'inline-block', marginLeft: '6px', marginRight: '3px', verticalAlign: 'middle' }}><circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></svg>
-                      https://emertech.io/
+                      https://emertech.io
                     </span>
                   </p>
                 </div>
@@ -1054,20 +1069,7 @@ export default function SubmitExpense() {
                   className="form-input" 
                   placeholder="John Doe" 
                   value={name} 
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setName(val);
-                    if (val.length > name.length && val.trim().length >= 2) {
-                      const search = val.toLowerCase();
-                      let matches = suggestions.filter(s => s.toLowerCase().startsWith(search));
-                      if (matches.length === 0) {
-                        matches = suggestions.filter(s => s.toLowerCase().includes(search));
-                      }
-                      if (matches.length === 1) {
-                        setName(matches[0]);
-                      }
-                    }
-                  }} 
+                  onChange={(e) => setName(e.target.value)} 
                   list="employee-names"
                   autoComplete="off"
                 />
@@ -1230,8 +1232,8 @@ export default function SubmitExpense() {
                               alert(`Unsupported file type: "${file.name}". Only images and PDF files are allowed.`);
                               continue;
                             }
-                            if (file.size > 10 * 1024 * 1024) {
-                              alert(`File "${file.name}" exceeds 10MB limit.`);
+                            if (file.size > 4 * 1024 * 1024) {
+                              alert(`File "${file.name}" exceeds the 4MB size limit.`);
                             } else {
                               validFiles.push(file);
                             }
@@ -1241,7 +1243,7 @@ export default function SubmitExpense() {
                           e.target.value = ""; // Clear so selecting same files triggers onChange
                         }} 
                       />
-                      <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Max size: 10MB per file. Select multiple files if needed.</p>
+                      <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Max size: 4MB per file. Select multiple files if needed.</p>
                       
                       {item.proofs && item.proofs.length > 0 && (
                         <div className="file-chip-container">
