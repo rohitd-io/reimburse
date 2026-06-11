@@ -1208,8 +1208,21 @@ export default function SubmitExpense() {
                   type="text" 
                   className="form-input" 
                   placeholder="John Doe" 
-                  value={name} 
-                  onChange={(e) => setName(e.target.value)} 
+                  value={name}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setName(val);
+                    if (val.length > name.length && val.trim().length >= 2) {
+                      const search = val.toLowerCase();
+                      let matches = suggestions.filter(s => s.toLowerCase().startsWith(search));
+                      if (matches.length === 0) {
+                        matches = suggestions.filter(s => s.toLowerCase().includes(search));
+                      }
+                      if (matches.length === 1) {
+                        setName(matches[0]);
+                      }
+                    }
+                  }}
                   list="employee-names"
                   autoComplete="off"
                 />
