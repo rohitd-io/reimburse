@@ -265,6 +265,12 @@ export default function SubmitExpense() {
   }, [submittedExpense, isAnyPDFLoading, autoPrintTriggered]);
 
   if (submittedExpense) {
+    const hasProofs = submittedExpense.items.some(item => 
+      (item.proofs && item.proofs.length > 0) || 
+      (item.proof_path && getProofPaths(item.proof_path).length > 0)
+    );
+    const hasMultiplePages = includeOfficeCopy || hasProofs;
+
     return (
       <>
         <div className="header no-print">
@@ -396,7 +402,9 @@ export default function SubmitExpense() {
 
         {showPrintPreview && (
           <div style={{ maxWidth: '850px', margin: '0 auto 3rem auto' }} className="no-print">
-          <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '1.5rem', color: 'var(--text-main)' }}>Print Preview & Page Exclusions</h2>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '1.5rem', color: 'var(--text-main)' }}>
+            {hasMultiplePages ? "Print Preview & Page Exclusions" : "Print Preview"}
+          </h2>
           
           {/* Original Copy Preview Card */}
           {excludedPages.has("original") ? (
@@ -415,9 +423,11 @@ export default function SubmitExpense() {
             <div className="preview-page-card">
               <div className="preview-page-header">
                 <span className="preview-page-title">Original Payment Voucher</span>
-                <button type="button" className="page-exclude-btn" onClick={() => handleToggleExclude("original")}>
-                  Exclude Page
-                </button>
+                {hasMultiplePages && (
+                  <button type="button" className="page-exclude-btn" onClick={() => handleToggleExclude("original")}>
+                    Exclude Page
+                  </button>
+                )}
               </div>
               <div className="card-body" style={{ padding: '1rem', backgroundColor: '#fff', color: '#1a1a1a', fontFamily: "'Inter', sans-serif" }}>
                 <div className="voucher-preview-scroll">
@@ -529,9 +539,11 @@ export default function SubmitExpense() {
               <div className="preview-page-card">
                 <div className="preview-page-header">
                   <span className="preview-page-title">Duplicate Payment Voucher (Office Copy)</span>
-                  <button type="button" className="page-exclude-btn" onClick={() => handleToggleExclude("duplicate")}>
-                    Exclude Page
-                  </button>
+                  {hasMultiplePages && (
+                    <button type="button" className="page-exclude-btn" onClick={() => handleToggleExclude("duplicate")}>
+                      Exclude Page
+                    </button>
+                  )}
                 </div>
                 <div className="card-body" style={{ padding: '1rem', backgroundColor: '#fff', color: '#1a1a1a', fontFamily: "'Inter', sans-serif" }}>
                   <div className="voucher-preview-scroll">

@@ -133,6 +133,11 @@ export default function HRDashboard() {
   const [loadingPDFs, setLoadingPDFs] = useState<Record<string, boolean>>({});
   const [showPrintPreview, setShowPrintPreview] = useState(false);
 
+  const hasProofs = selectedExpense?.items.some(item => 
+    item.proof_path && getProofPaths(item.proof_path).length > 0
+  ) || false;
+  const hasMultiplePages = includeOfficeCopy || hasProofs;
+
   const handlePDFLoadingStateChange = useCallback((key: string, isLoading: boolean) => {
     setLoadingPDFs((prev) => {
       if (prev[key] === isLoading) return prev;
@@ -792,10 +797,14 @@ export default function HRDashboard() {
 
             {showPrintPreview && (
               <div style={{ marginTop: '2.5rem', paddingTop: '2rem', borderTop: '1px solid var(--border)' }}>
-                <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--text-main)' }}>Print Preview & Page Exclusions</h3>
-              <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
-                Click <strong>Exclude Page</strong> to skip printing specific payment slips, individual receipts, or particular pages of a PDF.
-              </p>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--text-main)' }}>
+                  {hasMultiplePages ? "Print Preview & Page Exclusions" : "Print Preview"}
+                </h3>
+              {hasMultiplePages && (
+                <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
+                  Click <strong>Exclude Page</strong> to skip printing specific payment slips, individual receipts, or particular pages of a PDF.
+                </p>
+              )}
 
               {/* Original Copy Preview Card */}
               {excludedPages.has("original") ? (
@@ -814,9 +823,11 @@ export default function HRDashboard() {
                 <div className="preview-page-card">
                   <div className="preview-page-header">
                     <span className="preview-page-title">Original Payment Voucher</span>
-                    <button type="button" className="page-exclude-btn" onClick={() => handleToggleExclude("original")}>
-                      Exclude Page
-                    </button>
+                    {hasMultiplePages && (
+                      <button type="button" className="page-exclude-btn" onClick={() => handleToggleExclude("original")}>
+                        Exclude Page
+                      </button>
+                    )}
                   </div>
                   <div className="card-body" style={{ padding: '1rem', backgroundColor: '#fff', color: '#1a1a1a', fontFamily: "'Inter', sans-serif" }}>
                     <div className="voucher-preview-scroll">
@@ -928,9 +939,11 @@ export default function HRDashboard() {
                   <div className="preview-page-card">
                     <div className="preview-page-header">
                       <span className="preview-page-title">Duplicate Payment Voucher (Office Copy)</span>
-                      <button type="button" className="page-exclude-btn" onClick={() => handleToggleExclude("duplicate")}>
-                        Exclude Page
-                      </button>
+                      {hasMultiplePages && (
+                        <button type="button" className="page-exclude-btn" onClick={() => handleToggleExclude("duplicate")}>
+                          Exclude Page
+                        </button>
+                      )}
                     </div>
                     <div className="card-body" style={{ padding: '1rem', backgroundColor: '#fff', color: '#1a1a1a', fontFamily: "'Inter', sans-serif" }}>
                       <div className="voucher-preview-scroll">
