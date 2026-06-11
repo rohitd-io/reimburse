@@ -3,22 +3,50 @@
 import db from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import { put } from "@vercel/blob";
-import { headers } from "next/headers";
+import { headers, cookies } from "next/headers";
+import { verifySession } from "@/lib/session";
 
 // Simple in-memory rate limiting cache
 // Key: IP address, Value: Array of timestamps of submissions in the last minute
 const rateLimitMap = new Map<string, number[]>();
 
+async function verifyAdminSessionOrThrow() {
+  const sessionToken = (await cookies()).get("emertech_reimburse_session")?.value;
+  const session = sessionToken ? await verifySession(sessionToken) : null;
+  if (!session) {
+    throw new Error("Unauthorized administrative access.");
+  }
+  return session;
+}
+
 export async function getExpenses() {
+  await verifyAdminSessionOrThrow();
+
   const result = await db.execute('SELECT * FROM expenses ORDER BY date DESC, id DESC');
   const expenses = result.rows;
   
-  const results = await Promise.all(expenses.map(async (exp) => {
-    const itemsResult = await db.execute({
-      sql: 'SELECT * FROM expense_items WHERE expense_id = ?',
-      args: [String(exp.id)]
-    });
-    return { ...exp, items: itemsResult.rows };
+  if (expenses.length === 0) {
+    return [];
+  }
+
+  // Fetch all expense items in a single query
+  const itemsResult = await db.execute('SELECT * FROM expense_items');
+  const allItems = itemsResult.rows;
+
+  // Group items by expense_id in O(M) time
+  const itemsByExpenseId: Record<string, (typeof allItems[number])[]> = {};
+  for (const item of allItems) {
+    const expId = String(item.expense_id);
+    if (!itemsByExpenseId[expId]) {
+      itemsByExpenseId[expId] = [];
+    }
+    itemsByExpenseId[expId].push(item);
+  }
+
+  // Map items back to expenses in O(N) time
+  const results = expenses.map((exp) => ({
+    ...exp,
+    items: itemsByExpenseId[String(exp.id)] || []
   }));
   
   return JSON.parse(JSON.stringify(results));
@@ -162,6 +190,7 @@ export async function submitExpense(formData: FormData) {
 }
 
 export async function updateExpenseStatus(id: string | number, status: string) {
+  await verifyAdminSessionOrThrow();
   await db.execute({
     sql: 'UPDATE expenses SET status = ? WHERE id = ?',
     args: [status, String(id)]
@@ -171,6 +200,7 @@ export async function updateExpenseStatus(id: string | number, status: string) {
 }
 
 export async function getReceiptCounter() {
+  await verifyAdminSessionOrThrow();
   const result = await db.execute({
     sql: 'SELECT value FROM settings WHERE key = ?',
     args: ['next_receipt_no']
@@ -184,6 +214,7 @@ export async function getReceiptCounter() {
 }
 
 export async function updateReceiptCounter(newCount: number) {
+  await verifyAdminSessionOrThrow();
   const result = await db.execute({
     sql: 'SELECT value FROM settings WHERE key = ?',
     args: ['next_receipt_no']

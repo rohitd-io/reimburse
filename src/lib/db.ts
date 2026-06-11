@@ -40,13 +40,23 @@ db.executeMultiple(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     email TEXT UNIQUE NOT NULL,
     otp TEXT,
-    otp_expires_at INTEGER
+    otp_expires_at INTEGER,
+    otp_attempts INTEGER DEFAULT 0
   );
 
   CREATE TABLE IF NOT EXISTS settings (
     key TEXT PRIMARY KEY,
     value TEXT
   );
-`).catch(err => console.error("DB Init Error:", err));
+`).then(async () => {
+  try {
+    await db.execute("ALTER TABLE admins ADD COLUMN otp_attempts INTEGER DEFAULT 0");
+  } catch (err: unknown) {
+    const error = err as { message?: string };
+    if (!error.message?.includes("duplicate column name") && !error.message?.includes("already exists")) {
+      console.error("Failed to alter admins table:", err);
+    }
+  }
+}).catch(err => console.error("DB Init Error:", err));
 
 export default db;

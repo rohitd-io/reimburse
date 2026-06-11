@@ -40,7 +40,7 @@ export default function Login() {
 
     setLoading(true);
     try {
-      const res = await requestOtp(email, honeypot);
+      const res = await requestOtp(email, num1, num2, captchaAnswer, honeypot);
       if (res.success) {
         setStep("OTP");
       } else {

@@ -3,6 +3,7 @@
 import db from "@/lib/db";
 import nodemailer from "nodemailer";
 import { cookies } from "next/headers";
+import { signSession } from "@/lib/session";
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || "smtp.gmail.com",
@@ -14,10 +15,25 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-export async function requestOtp(email: string, honeypot?: string) {
+export async function requestOtp(
+  email: string,
+  num1?: number,
+  num2?: number,
+  captchaAnswer?: string,
+  honeypot?: string
+) {
   if (honeypot) {
     // Silently ignore bots
     return { success: true };
+  }
+
+  // Server-side CAPTCHA verification
+  if (num1 === undefined || num2 === undefined || !captchaAnswer) {
+    return { success: false, error: "Verification parameters are missing. Please solve the CAPTCHA." };
+  }
+
+  if (parseInt(captchaAnswer) !== num1 + num2) {
+    return { success: false, error: "Security verification failed. Please try again." };
   }
 
   // Check if admin exists
@@ -45,9 +61,9 @@ export async function requestOtp(email: string, honeypot?: string) {
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
   const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
 
-  // Save OTP in DB
+  // Save OTP in DB and reset attempts to 0
   await db.execute({
-    sql: 'UPDATE admins SET otp = ?, otp_expires_at = ? WHERE email = ?',
+    sql: 'UPDATE admins SET otp = ?, otp_expires_at = ?, otp_attempts = 0 WHERE email = ?',
     args: [otp, expiresAt, email.toLowerCase()]
   });
 
@@ -175,8 +191,8 @@ export async function verifyOtp(email: string, otp: string, honeypot?: string) {
   }
 
   const result = await db.execute({
-    sql: 'SELECT * FROM admins WHERE email = ? AND otp = ?',
-    args: [email.toLowerCase(), otp]
+    sql: 'SELECT * FROM admins WHERE email = ?',
+    args: [email.toLowerCase()]
   });
 
   if (result.rows.length === 0) {
@@ -184,20 +200,53 @@ export async function verifyOtp(email: string, otp: string, honeypot?: string) {
   }
 
   const admin = result.rows[0];
-  const expiresAt = admin.otp_expires_at as number;
+  const storedOtp = admin.otp as string | null;
+  const expiresAt = admin.otp_expires_at as number | null;
+  const attempts = (admin.otp_attempts as number) || 0;
 
-  if (Date.now() > expiresAt) {
-    return { success: false, error: "OTP has expired" };
+  if (attempts >= 5) {
+    // Invalidate OTP entirely
+    await db.execute({
+      sql: 'UPDATE admins SET otp = NULL, otp_expires_at = NULL WHERE email = ?',
+      args: [email.toLowerCase()]
+    });
+    return { success: false, error: "Too many failed attempts. This OTP has been invalidated. Please request a new one." };
   }
 
-  // Clear OTP
+  if (!storedOtp || !expiresAt || Date.now() > expiresAt) {
+    return { success: false, error: "OTP has expired or is invalid. Please request a new one." };
+  }
+
+  if (storedOtp !== otp) {
+    const newAttempts = attempts + 1;
+    if (newAttempts >= 5) {
+      await db.execute({
+        sql: 'UPDATE admins SET otp = NULL, otp_expires_at = NULL, otp_attempts = 0 WHERE email = ?',
+        args: [email.toLowerCase()]
+      });
+      return { success: false, error: "Too many failed attempts. This OTP has been invalidated. Please request a new one." };
+    } else {
+      await db.execute({
+        sql: 'UPDATE admins SET otp_attempts = ? WHERE email = ?',
+        args: [newAttempts, email.toLowerCase()]
+      });
+      return { success: false, error: `Invalid OTP. You have ${5 - newAttempts} attempts remaining.` };
+    }
+  }
+
+  // Clear OTP and reset attempts on success
   await db.execute({
-    sql: 'UPDATE admins SET otp = NULL, otp_expires_at = NULL WHERE email = ?',
+    sql: 'UPDATE admins SET otp = NULL, otp_expires_at = NULL, otp_attempts = 0 WHERE email = ?',
     args: [email.toLowerCase()]
   });
 
-  // Set cookie securely
-  (await cookies()).set("emertech_reimburse_session", "true", {
+  // Set cookie securely with cryptographically signed token
+  const sessionToken = await signSession({
+    email: email.toLowerCase(),
+    expires: Date.now() + 3600 * 1000 // 1 hour
+  });
+
+  (await cookies()).set("emertech_reimburse_session", sessionToken, {
     path: "/",
     maxAge: 3600, // 1 hour
     httpOnly: true, 
